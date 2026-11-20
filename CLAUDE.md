@@ -13,18 +13,18 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
   (der Teil meiner eigenen Seite, den ich teile), nicht umgekehrt. Fühlt sich an wie genau dafür gemacht, nicht wie
   eine Notiz-App mit Ordnern.
 - Wer, wann: ich (später eingeladene Freunde mit eigenem Konto) zwischendurch am Handy, wenn mir etwas über jemanden
-  einfällt oder ich ein Geschenk suche; am PC zum Pflegen und für eine Rede. Gäste öffnen meinen Link am Handy, wählen
-  ihren Namen und suchen etwas aus.
+  einfällt oder ich ein Geschenk suche; am PC zum Pflegen und für eine Rede. Gäste öffnen meinen Link am Handy und
+  suchen etwas aus, ohne Namen und ohne Konto.
 - Kernhandlungen, die schnell bleiben müssen: aussuchen und reservieren (Gast); etwas festhalten und etwas wiederfinden
   (ich). Keine Zusatzfunktion darf sie ausbremsen.
 - Gelungen, wenn: die Wunschliste vor Weihnachten 2026 verschickt ist und niemand etwas doppelt schenkt; ein Gast ohne
   Erklärung in unter einer Minute etwas reserviert; ich einen Satz über jemanden in drei Handgriffen festhalte; ich für
   eine Rede auf „Geschichte“ filtere und alles in Reihenfolge habe; der Abschottungstest grün ist.
 - Abgenommen: Plan `docs/plan.md` samt den sechs Annahmen in Abschnitt 6 (Go, Lukas, 20.11.2026): Zusammenlegen nur
-  bei markierten Wünschen, je Gast die Anzahl, Aufdecken ab dem Tag nach dem Anlass und nie vorziehbar, Gastnamen
-  einmal anlegen und je Liste wählen, Brevo für Etappe 3, Repo öffentlich. Design: **Entwurf C „Faden“**
+  bei markierten Wünschen, Brevo für Etappe 3, Repo öffentlich. Design: **Entwurf C „Faden“**
   (`entwuerfe/faden/`, Stand Commit 655a212; Lukas, 20.11.2026). Bilder ohne eigenes Hochladen: Link reicht oder kein
-  Bild; Klick auf Wunschkarte führt zum Shop.
+  Bild; Klick auf Wunschkarte führt zum Shop. Keine Gäste, kein „Wer bist du?“, kein Aufdecken (Lukas,
+  20.11.2026). **Annahme:** ich sehe nur „3 Wünsche vergeben“, beim Zusammenlegen freiwillig ein Vorname.
 - Nicht gewollt: Notiz-App mit Ordnern; starres Formular mit zwanzig Feldern; Lukas' strenger Linear-Look; Blau als
   Themenfarbe; KI-Baukasten-Optik; Titelbalken oben links (kein Logo, kein App-Name, kein Menüzeichen); eigene
   Push-Meldungen; Beträge rechnen beim Zusammenlegen; Kennwort oder Konto für Gäste; Registrieren ohne Einladung.
@@ -35,7 +35,7 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
 - Alles im Personenbuch ist privat und nur fürs eigene Konto lesbar. Nach außen geht nur, was ausdrücklich als
   Wunschliste geteilt ist. Der **Abschottungstest** beweist es: ein fremdes Konto und ein Gast ohne Konto kommen an
   nichts Privates. Er läuft bei jedem `npm test` und nach jedem Einspielen.
-- Die Datenbank gibt meiner Ansicht nie heraus, welcher Wunsch reserviert ist, erst nach dem Aufdecken.
+- Die Datenbank gibt meiner Ansicht nie heraus, welcher Wunsch reserviert ist.
 - Alles lässt sich als Datei exportieren.
 - Jede Etappe ist allein lauffähig und wird abgenommen, bevor die nächste beginnt.
 

@@ -31,14 +31,12 @@ Jede Zeile trägt `konto_id` (= Anmelde-ID des Besitzers). Löschen eines Kontos
 konto            id, anzeigename ("Lukas"), angelegt
 wunsch           id, konto_id, titel, beschreibung, bild_pfad, shop_url, haendler,
                  preis_ca, preis_stand (Datum), zusammenlegen (ja/nein), angelegt, entfernt_am
-liste            id, konto_id, titel ("Weihnachten 2026"), anlass_datum, aufdecken_ab,
-                 link_schluessel (128 Bit Zufall), aufgedeckt_am, archiviert
+liste            id, konto_id, titel ("Weihnachten 2026"), anlass_datum,
+                 link_schluessel (128 Bit Zufall), archiviert
 liste_wunsch     liste_id, wunsch_id, reihenfolge
-gast             id, konto_id, name ("Mama"), person_id (ab Etappe 2)
-liste_gast       liste_id, gast_id
-reservierung     id, wunsch_id, liste_id, gast_id, art (schenke_ich | bin_dabei),
+reservierung     id, wunsch_id, liste_id, art (schenke_ich | bin_dabei), vorname (nur bei bin_dabei, freiwillig),
                  geraet_hash, angelegt, zurueckgenommen_am, konto_des_gastes (ab Etappe 3)
-wunsch_voll      wunsch_id, liste_id, markiert_von_gast, markiert_am
+wunsch_voll      wunsch_id, liste_id, markiert_von_geraet, markiert_am
 ```
 
 - **Wünsche gehören mir, nicht der Liste.** Eine Liste zeigt eine Auswahl meiner Wünsche. So ist „Was ich brauche“ ab
@@ -96,17 +94,15 @@ fremde_liste     konto_id, link_schluessel, person_id   (wessen Liste ist das in
 
 | Funktion | Wer | Gibt heraus |
 | --- | --- | --- |
-| `gast_liste(schluessel)` | jeder mit Link | Listentitel, mein Anzeigename, Gastnamen, Wünsche mit Stand je Gast: frei / von dir / zusammenlegen (mit Namen der Beteiligten) / voll. Fremde Reservierungen nur als „weg“, ohne Namen |
-| `gast_reservieren(schluessel, wunsch, gast, geraet)` | jeder mit Link | sperrt den Wunsch beim Schreiben, damit zwei gleichzeitige Tipps nicht beide gewinnen |
+| `gast_liste(schluessel, geraet)` | jeder mit Link | Listentitel, mein Anzeigename, Wünsche mit Stand für dieses Gerät: frei / von dir / zusammenlegen (mit den freiwilligen Vornamen der Beteiligten, sonst „2 sind dabei“) / voll. Fremde Reservierungen nur als „weg“ |
+| `gast_reservieren(schluessel, wunsch, geraet, vorname?)` | jeder mit Link | sperrt den Wunsch beim Schreiben, damit zwei gleichzeitige Tipps nicht beide gewinnen |
 | `gast_zuruecknehmen(schluessel, reservierung, geraet)` | nur gleiches Gerät | |
 | `gast_voll(schluessel, wunsch, geraet)` | nur Beteiligte | Wunsch verschwindet für alle anderen |
-| `mein_stand(liste)` | Besitzer | je Gast die Anzahl („Mama · 2“), nie welche |
-| `gast_freigeben(liste, gast)` | Besitzer | gibt alle Reservierungen eines Gastes frei (falls dessen Gerät weg ist), ohne zu zeigen, welche |
-| `aufdecken(liste)` | Besitzer, erst ab `aufdecken_ab` | wer was geschenkt hat |
+| `mein_stand(liste)` | Besitzer | nur die Gesamtzahl („3 Wünsche vergeben“), nie welche, nie von wem |
 
-- `aufdecken_ab` ist standardmäßig der Tag nach dem Anlass. Sobald eine Reservierung besteht, lässt sich das Datum
-  nicht mehr vorziehen (sonst könnte ich mir den Anlass auf gestern legen und nachsehen).
-- Export vor dem Aufdecken enthält keine Reservierungen.
+- Keine Gäste, kein Aufdecken (Lukas, 20.11.2026: „egal wer du bist … beim Schenken bekomm ich ja auch mit, wer mir das
+  schenkt“). Reservierungen hängen nur am Gerät.
+- Export enthält keine Reservierungen.
 - **Ehrliche Grenze:** Öffne ich meinen eigenen Link im privaten Fenster, sehe ich wie jeder Gast, was weg ist. Das
   lässt sich ohne Gast-Konten nicht verhindern. Angemeldet zeigt mir der Link nur eine Vorschau ohne Reservierungsstand.
 
@@ -125,7 +121,7 @@ fremde_liste     konto_id, link_schluessel, person_id   (wessen Liste ist das in
   vergessen wird. Schlägt fehl, wenn eine Tabelle keinen Zeilenschutz hat.
 - Legt Konto A mit Daten in jeder Tabelle an, dazu Konto B und einen Gast ohne Anmeldung. Prüft: B liest von A
   nichts und ändert nichts; der Gast liest keine Tabelle; jede Funktion mit A's Kennungen liefert B und dem Gast
-  nichts; `gast_liste` gibt nur die erlaubten Felder heraus; A sieht vor dem Aufdecken nie, welcher Wunsch reserviert
+  nichts; `gast_liste` gibt nur die erlaubten Felder heraus; A sieht nie, welcher Wunsch reserviert
   ist (auch nicht über Export, Stand oder Sortierung).
 - Läuft zweimal: bei jedem `npm test` gegen eine Datenbank im Gerät (PGlite, echtes Postgres ohne Docker, das hier
   nicht installiert ist; **Annahme**, wird zu Beginn von Etappe 1 als Erstes geprüft) und nach jedem Einspielen gegen
@@ -138,27 +134,25 @@ Handy zuerst, PC als breitere Fassung derselben Seiten. Oben links nie ein Titel
 ### Etappe 1: Wunschliste
 
 **Gast (über den Link)**
-1. **Wer bist du?** Die Namen, die ich angelegt habe, als große runde Felder. Ein Tipp, das Gerät merkt es sich; beim
-   nächsten Mal geht es direkt zur Liste. „Nicht du?“ klein unten.
+1. ~~Wer bist du?~~ Entfällt (Lukas, 20.11.2026): Der Link öffnet direkt die Liste, ohne Namen und ohne Konto.
 2. **Liste.** Kopf: „Lukas wünscht sich · Weihnachten 2026“. Karten mit Bild, Kurztitel, Mini-Beschreibung,
    „ca. 39 € · Stand 18.11.“, Händler, Knopf zum Shop, Knopf „Das schenke ich“. Beim Tipp die ruhige Animation (die
    Karte wird eingepackt) und sie wandert nach oben unter „Von dir“ mit „Zurücknehmen“. Weg ist sie für alle anderen.
-   Zusammenlegen-Wünsche: „Zusammenlegen · Anna und Ben sind dabei“, Knopf „Ich bin dabei“; Beteiligte sehen
-   „Ist voll“.
+   Zusammenlegen-Wünsche: „Zusammenlegen · Anna und Ben sind dabei“ (oder „2 sind dabei“), Knopf „Ich bin dabei“
+   mit freiwilligem Vornamen, damit die Beteiligten sich finden; Beteiligte sehen „Ist voll“.
 3. **Geht nicht mehr.** Hat in derselben Sekunde jemand anderes getippt: freundlicher Hinweis, Karte geht weg.
 
 **Ich**
 4. **Anmelden.** E-Mail eingeben, Link aus der Mail antippen, Gerät bleibt angemeldet.
-5. **Meine Listen.** Je Anlass eine Karte: Titel, Datum, Anzahl Wünsche, „3 Leute haben etwas ausgesucht“.
+5. **Meine Listen.** Je Anlass eine Karte: Titel, Datum, Anzahl Wünsche, „3 Wünsche vergeben“.
 6. **Liste.** Alle Wünsche immer vollständig, ohne Reservierungsstand. Oben: Link teilen (Teilen-Menü des Handys),
-   Gäste mit Anzahl („Mama · 2, Ben · 1“), „So sehen es deine Leute“ (Vorschau), „Aufdecken ab 25.12.“ (vorher
-   ausgegraut). Wünsche aus meinen anderen Listen per Tipp dazunehmen.
+   „3 Wünsche vergeben“ (nur die Zahl), „So sehen es deine Leute“ (Vorschau). Wünsche aus meinen anderen Listen per
+   Tipp dazunehmen.
 7. **Wunsch anlegen.** Ein Feld „Link einfügen“ (am Handy mit Einfügen-Knopf). Danach sind Bild, Titel, Preis, Händler
    vorgefüllt und Titel, Text, Preis, Händler direkt änderbar. Kein eigenes Hochladen von Bildern (Lukas, 20.11.2026:
    „link muss reichen oder halt kein bild“). Bild und Titel einer Wunschkarte führen per Klick direkt zum Shop.
    Schalter „Zum Zusammenlegen“.
-8. **Gäste.** Namen anlegen, umbenennen, je Liste an- und abwählen, „Reservierungen freigeben“.
-9. **Aufdecken.** Ab dem Tag nach dem Anlass: wer was geschenkt hat, je Gast.
+8. ~~Gäste~~ und 9. ~~Aufdecken~~ entfallen (Lukas, 20.11.2026).
 10. **Export.** Eine Datei (ZIP mit JSON und Bildern).
 
 ### Etappe 2: Personenbuch
@@ -206,11 +200,10 @@ Spalte, ohne Logo. Festhalten und Suche gehen am PC zusätzlich über die Tastat
 
 1. **Zusammenlegen:** Ich markiere einzelne Wünsche als „zum Zusammenlegen“ (die teuren); nur dort gibt es „Ich bin
    dabei“, sonst „Das schenke ich“. *Alternative: bei jedem Wunsch beides.*
-2. **„Wer und wie viele“** heißt: je Gast die Anzahl („Mama · 2“). Bei einer Liste mit nur einem Wunsch verrät das
-   natürlich, welcher es ist.
-3. **Aufdecken** ab dem Tag nach dem Anlass (Weihnachten: ab 25.12.), änderbar, aber nie vorziehbar, sobald etwas
-   reserviert ist.
-4. **Gastnamen** lege ich einmal an und wähle je Liste aus (Familie für Weihnachten, Freunde für den Geburtstag).
+2. ~~„Wer und wie viele“~~, 3. ~~Aufdecken~~, 4. ~~Gastnamen~~: ersetzt durch Lukas' Wort vom 20.11.2026, keine Gäste.
+   Neue **Annahmen** dazu: (a) Ich sehe von meiner Liste nur die Gesamtzahl „3 Wünsche vergeben“, nie welche.
+   (b) Beim Zusammenlegen gibt man freiwillig einen Vornamen an, damit sich die Beteiligten absprechen können.
+   (c) Verliert jemand sein Gerät, bleibt seine Reservierung stehen (Freigeben ginge nur, wenn ich sehe, welche).
 5. **Maildienst** für Etappe 3: Brevo (Server in der EU, kostenlos bis 300 Mails am Tag) als eigener Versand für die
    Anmeldelinks. In Etappe 1 reicht der eingebaute Versand, weil nur du dich anmeldest.
 6. **Repo öffentlich** (für kostenloses GitHub Pages), ohne echte Daten.
