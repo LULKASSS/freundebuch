@@ -84,7 +84,7 @@ test('Zusammenlegen: Vorname freiwillig, andere sehen ihn, „Ist voll“ nimmt 
   await b.page.click(`${W(4)} [data-aktion="dabei-fragen"]`);
   await b.page.click(`${W(4)} [data-aktion="dabei"]`); // ohne Namen
   await b.page.waitForSelector(`.von-dir ${W(4)}`);
-  assert.match(await b.page.textContent(`${W(4)} .zusammen`), /du, Anna/);
+  assert.match(await b.page.textContent(`${W(4)} .zusammen`), /du und Anna/);
 
   await a.page.reload();
   await a.page.waitForSelector(`${W(4)} .zusammen`);
@@ -169,4 +169,20 @@ test('Anmelden: unbekannte Adresse bekommt den Hinweis „nur auf Einladung“',
   await page.click('button[type="submit"]');
   await page.waitForSelector('.post');
   await ctx.close();
+});
+
+test('Preise: Tausenderpunkt und Komma werden richtig gelesen, leerer Titel bekommt eine Meldung', async () => {
+  await zuruecksetzen();
+  const ich = await geraet({ angemeldet: true, ziel: LISTE });
+  await ich.page.click('[data-aktion="wunsch-neu"]');
+  await ich.page.click('[data-aktion="ohne-link"]');
+  await ich.page.waitForSelector('#w-titel');
+  await ich.page.click('.blatt button[type="submit"]');
+  assert.match(await ich.page.textContent('#w-fehler'), /Titel/);
+  await ich.page.fill('#w-titel', 'E-Bike');
+  await ich.page.fill('#w-preis', '1.299');
+  await ich.page.click('.blatt button[type="submit"]');
+  await ich.page.waitForSelector('.blatt-huelle', { state: 'detached' });
+  assert.match(await ich.page.textContent('.wunsch-liste.ich'), /ca\. 1\.299 €/);
+  await ich.ctx.close();
 });

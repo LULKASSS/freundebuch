@@ -170,6 +170,18 @@ function amazon(html: string) {
   return { titel, bild, preis };
 }
 
+// Letzte Stufe: das erste Bild, das nach Produktfoto aussieht (groß angegeben oder als Haupt-/Produktbild benannt).
+function grossesBild(html: string) {
+  for (const m of html.matchAll(/<img\b[^>]*>/gi)) {
+    const tag = m[0];
+    const src = tag.match(/\s(?:data-src|src)=["']([^"']+)["']/i)?.[1] ?? '';
+    if (!src || src.startsWith('data:') || /logo|icon|sprite|pixel|avatar|badge|\.svg/i.test(src)) continue;
+    const breite = +(tag.match(/\swidth=["']?(\d+)/i)?.[1] ?? 0);
+    if (breite >= 300 || /(product|produkt|main|hero|gallery|zoom)/i.test(tag)) return src;
+  }
+  return '';
+}
+
 function haendlerAus(u: URL, seitenname: string) {
   const teile = u.hostname.toLowerCase().replace(/^www\d?\./, '').split('.');
   const kern = teile.length > 2 && ['co', 'com'].includes(teile[teile.length - 2]) ? teile[teile.length - 3] : teile[teile.length - 2] ?? teile[0];
@@ -199,14 +211,30 @@ const kuerzen = (s: string, n: number) => (s.length > n ? s.slice(0, n - 1).repl
 
 // ---------- Bild in den eigenen Speicher ----------
 const ENDUNG: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
-async function bildUebernehmen(adresse: string, konto: string): Promise<string | null> {
+async function bildUebernehmen(adresse: string): Promise<string | null> {
   try {
     const { r } = await holen(adresse, 'bild');
     const typ = (r.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
     if (!r.ok || !ENDUNG[typ]) return null;
-    const daten = new Uint8Array(await r.arrayBuffer());
-    if (daten.length < 600 || daten.length > 3_000_000) return null;
-    const pfad = `${konto}/${crypto.randomUUID()}.${ENDUNG[typ]}`;
+    if (+(r.headers.get('content-length') ?? 0) > 3_000_000) return null;
+    // Beim Laden mitzählen und abbrechen, sobald es zu groß wird.
+    const teile: Uint8Array[] = [];
+    let n = 0;
+    const leser = r.body!.getReader();
+    for (;;) {
+      const { value, done } = await leser.read();
+      if (done) break;
+      n += value.length;
+      if (n > 3_000_000) { leser.cancel().catch(() => {}); return null; }
+      teile.push(value);
+    }
+    if (n < 600) return null; // Platzhalter-Pixel (z. B. Amazon ohne Bild)
+    const daten = new Uint8Array(n);
+    let o = 0;
+    for (const t of teile) { daten.set(t, o); o += t.length; }
+    // Zufälliger Ordner statt Konto-ID: Gäste sehen den Pfad in der Bildadresse.
+    const zufall = () => crypto.randomUUID().replace(/-/g, '');
+    const pfad = `${zufall().slice(0, 16)}/${zufall()}.${ENDUNG[typ]}`;
     const hoch = await fetch(`${SUPABASE_URL}/storage/v1/object/wunschbilder/${pfad}`, {
       method: 'POST',
       headers: { authorization: `Bearer ${DIENST}`, apikey: DIENST, 'content-type': typ, 'cache-control': 'max-age=31536000' },
@@ -227,7 +255,7 @@ Deno.serve(async (req) => {
   const token = req.headers.get('authorization') ?? '';
   const wer = await fetch(`${SUPABASE_URL}/auth/v1/user`, { headers: { authorization: token, apikey: ANON } });
   if (!wer.ok) return antwort({ fehler: 'anmelden' }, 401, herkunft);
-  const konto = (await wer.json()).id as string;
+  if (!(await wer.json().catch(() => null))?.id) return antwort({ fehler: 'anmelden' }, 401, herkunft);
 
   let roh = '';
   try { roh = String((await req.json()).url ?? '').trim(); } catch { /* leer */ }
@@ -252,10 +280,15 @@ Deno.serve(async (req) => {
   const titel = kuerzen(titelRoh.replace(new RegExp(`\\s*[|–-]\\s*${seitenname || '§§'}.*$`, 'i'), '').replace(/\s*[|]\s*[^|]{2,30}$/, ''), 120);
   const beschreibung = kuerzen(ld.beschreibung || meta(html, 'og:description', 'description', 'twitter:description'), 160);
   const preis = amz.preis ?? ld.preis ?? preisZahl(meta(html, 'product:price:amount', 'og:price:amount', 'price'));
-  let bild = amz.bild || ld.bild || meta(html, 'og:image', 'og:image:url', 'twitter:image', 'image');
+  let bild = amz.bild || ld.bild || meta(html, 'og:image', 'og:image:url', 'twitter:image', 'image') || grossesBild(html);
   if (bild) try { bild = new URL(entschluesseln(bild), ziel).href; } catch { bild = ''; }
 
-  const bild_pfad = bild ? await bildUebernehmen(bild, konto) : null;
+  let bild_pfad = bild ? await bildUebernehmen(bild) : null;
+  // Amazon ohne Bild im Seitencode (Server-Abrufe werden dort oft gesperrt): Bild über die ASIN.
+  const asin = ziel.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/i)?.[1];
+  if (!bild_pfad && asin && /amazon\./i.test(ziel.hostname)) {
+    bild_pfad = await bildUebernehmen(`https://images-na.ssl-images-amazon.com/images/P/${asin.toUpperCase()}.01.LZZZZZZZ.jpg`);
+  }
 
   return antwort({
     titel: titel || 'Wunsch',

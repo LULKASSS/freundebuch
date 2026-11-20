@@ -306,6 +306,15 @@ begin
   exception when others then null;
   end;
 
+  -- Liste mit Reservierungen lässt sich nicht löschen (sonst wären Wünsche auf anderen Listen wieder frei).
+  pruefungen := pruefungen + 1;
+  begin
+    delete from public.liste where id = la;
+    get diagnostics n = row_count;
+    if n > 0 then fehler := fehler || 'Liste mit Reservierungen ließ sich löschen'; end if;
+  exception when foreign_key_violation then null;
+  end;
+
   -- Wünsche lassen sich nicht löschen (sonst verriete die Zahl, welcher vergeben war).
   pruefungen := pruefungen + 1;
   begin
@@ -317,6 +326,16 @@ begin
 
   -- ===== Ergebnis =====
   perform set_config('role', 'none', true);
+  -- Ein ganzes Konto lässt sich samt allem löschen (Etappe 3), auch mit Reservierungen.
+  pruefungen := pruefungen + 1;
+  begin
+    delete from auth.users where id = a;
+    if exists (select 1 from public.liste where konto_id = a) or exists (select 1 from public.reservierung where konto_id = a) then
+      fehler := fehler || 'Nach dem Löschen des Kontos bleibt etwas übrig';
+    end if;
+  exception when others then
+    fehler := fehler || format('Konto ließ sich nicht löschen: %s', sqlerrm);
+  end;
   if array_length(fehler, 1) > 0 then
     raise exception 'ABSCHOTTUNG_FEHLER: %', array_to_string(fehler, ' | ');
   end if;

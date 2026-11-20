@@ -105,7 +105,7 @@ function dabeiText(w) {
   if (w.stand === 'dabei') {
     if (!w.beteiligte) return 'du bist dabei';
     if (!namen.length) return `du und ${ohne === 1 ? 'eine weitere Person' : `${ohne} weitere`}`;
-    return `du, ${undListe(teile.filter(Boolean))}`;
+    return undListe(['du', ...teile.filter(Boolean)]);
   }
   if (!w.beteiligte) return 'noch niemand dabei';
   if (!namen.length) return ohne === 1 ? 'eine Person ist dabei' : `${ohne} sind dabei`;
@@ -154,8 +154,8 @@ function gastWuensche() {
   const g = zustand.gast;
   const meine = g.wuensche.filter((w) => w.stand !== 'frei');
   const frei = g.wuensche.filter((w) => w.stand === 'frei');
-  return `${meine.length ? `<section class="von-dir" aria-labelledby="vondir-titel"><h2 class="abschnitt" id="vondir-titel">Von dir</h2><ol class="wunsch-liste">${meine.map((w) => gastKarte(w)).join('')}</ol></section>` : ''}
-    <section aria-labelledby="frei-titel"><h2 class="abschnitt" id="frei-titel">${meine.length ? 'Noch zu haben' : 'Zum Aussuchen'}</h2>
+  return `${meine.length ? `<section class="von-dir" aria-labelledby="vondir-titel"><h2 class="abschnitt" id="vondir-titel" tabindex="-1">Von dir</h2><ol class="wunsch-liste">${meine.map((w) => gastKarte(w)).join('')}</ol></section>` : ''}
+    <section aria-labelledby="frei-titel"><h2 class="abschnitt" id="frei-titel" tabindex="-1">${meine.length ? 'Noch zu haben' : 'Zum Aussuchen'}</h2>
     ${frei.length ? `<ol class="wunsch-liste">${frei.map((w) => gastKarte(w, offenDabei === w.id)).join('')}</ol>` : `<p class="leer-zeile">${g.wuensche.length ? 'Alles andere ist schon vergeben.' : 'Alles ist schon vergeben. Danke!'}</p>`}</section>`;
 }
 
@@ -452,7 +452,8 @@ function listeBlatt(L) {
       <label class="feld"><span class="feld-name">Datum (freiwillig)</span><input id="liste-datum" type="date" value="${esc(L?.anlass_datum || '')}"></label>
       <p class="feld-fehler" id="liste-fehler" role="alert" hidden></p>
       <div class="blatt-fuss">
-        ${L ? `<span class="links">${L.archiviert ? '<button class="knopf-text" type="button" data-aktion="liste-oeffnen">Wieder öffnen</button>' : '<button class="knopf-text" type="button" data-aktion="liste-abschliessen">Abschließen</button>'}<button class="knopf-text warnung" type="button" data-aktion="liste-loeschen">Löschen</button></span>` : ''}
+        ${L ? `<span class="links">${L.archiviert ? '<button class="knopf-text" type="button" data-aktion="liste-oeffnen">Wieder öffnen</button>' : '<button class="knopf-text" type="button" data-aktion="liste-abschliessen">Abschließen</button>'}${zustand.stand[L.id] ? '' : '<button class="knopf-text warnung" type="button" data-aktion="liste-loeschen">Löschen</button>'}</span>` : ''}
+      ${L && zustand.stand[L.id] ? '<p class="feld-unter">Auf dieser Liste ist schon etwas vergeben. Löschen geht deshalb nicht mehr, abschließen schon.</p>' : ''}
         <button class="knopf-rand" type="button" data-aktion="blatt-zu">Abbrechen</button>
         <button class="knopf" type="submit">${L ? 'Speichern' : 'Anlegen'}</button>
       </div>
@@ -461,7 +462,12 @@ function listeBlatt(L) {
 
 async function listeSpeichern() {
   const titel = $('#liste-titel').value.trim(), datumWert = $('#liste-datum').value || null;
-  if (!titel) { $('#liste-titel').setAttribute('aria-invalid', 'true'); $('#liste-titel').focus(); return; }
+  if (!titel) {
+    $('#liste-titel').setAttribute('aria-invalid', 'true');
+    Object.assign($('#liste-fehler'), { hidden: false, textContent: 'Bitte gib der Liste einen Namen, z. B. Weihnachten.' });
+    $('#liste-titel').focus();
+    return;
+  }
   const L = zustand.blatt.liste;
   try {
     if (L) {
@@ -543,10 +549,13 @@ async function linkPruefen(roh) {
 function preisLesen(t) {
   if (!t.trim()) return null;
   if (/[^\d,.\s€]/.test(t.replace(/ca\.?/i, ''))) return NaN;
-  const s = t.replace(/[^\d,.]/g, '');
+  let s = t.replace(/[^\d,.]/g, '');
   if (!s) return NaN;
-  const n = Number(s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s);
-  return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+  /* Deutsch: Punkt trennt Tausender (1.299), Komma die Cent (39,90). „39.90“ geht auch. */
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  const n = Number(s);
+  return Number.isFinite(n) && n < 1e8 ? Math.round(n * 100) / 100 : NaN;
 }
 
 async function wunschSpeichern() {
@@ -555,7 +564,7 @@ async function wunschSpeichern() {
   let link = $('#w-link').value.trim();
   if (link && !/^https?:\/\//i.test(link)) link = `https://${link}`;
   const fehler = $('#w-fehler');
-  if (!titel) { $('#w-titel').setAttribute('aria-invalid', 'true'); $('#w-titel').focus(); return; }
+  if (!titel) { $('#w-titel').setAttribute('aria-invalid', 'true'); fehler.hidden = false; fehler.textContent = 'Bitte einen Titel eintragen, damit man weiß, was es ist.'; $('#w-titel').focus(); return; }
   if (Number.isNaN(preis)) { fehler.hidden = false; fehler.textContent = 'Den Preis bitte als Zahl, z. B. 39,90.'; $('#w-preis').focus(); return; }
   const werte = {
     titel, beschreibung: $('#w-besch').value.trim(), preis_ca: preis, haendler: $('#w-haendler').value.trim(),
@@ -697,7 +706,7 @@ document.addEventListener('click', async (ev) => {
       try {
         await api.loeschen('liste', `id=eq.${zustand.blatt.liste.id}`);
         zustand.geladen = false; blattZu(); location.hash = ''; hinweis('Liste gelöscht');
-      } catch (e) { fehlerZeigen(e); }
+      } catch (e) { e.message?.includes('liste_vergeben') ? hinweis('Auf dieser Liste ist schon etwas vergeben. Schließ sie stattdessen ab.') : fehlerZeigen(e); }
       break;
     }
     case 'teilen': if (L) teilen(L); break;
