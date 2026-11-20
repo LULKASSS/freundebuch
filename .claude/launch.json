@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["scripts/serve.mjs"],
       "port": 5180
+    },
+    {
+      "name": "freundebuch-pruefung",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/pruefserver.mjs"],
+      "port": 5181
     }
   ]
 }

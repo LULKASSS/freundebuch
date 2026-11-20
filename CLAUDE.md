@@ -60,3 +60,13 @@ andere). „Festhalten“ bleibt als Wort (Lukas, 20.11.2026); auf einer Persone
 - Repo ist **öffentlich** (GitHub Pages): keine echten Namen, Geburtstage, Wünsche, Schlüssel außer dem öffentlichen
   `sb_publishable_…`. Beispiele sind erfunden.
 - Annahmen als **Annahme** kennzeichnen. Lukas entscheidet.
+
+## Technik (Etappe 1)
+
+- App: `index.html` + `app/` (ES-Module ohne Build). Supabase-Projekt „Freundebuch“ (`khwjegrwmqgrwviciapg`,
+  Frankfurt). Schema in `supabase/migrations/`, Link-Vorschau in `supabase/functions/vorschau/`.
+- `npm test`: Abschottungstest (PGlite) und Oberflächentest gegen den Prüfserver. `npm run pruefen` startet den
+  Prüfserver (Port 5181): App plus Nachbildung von Supabase auf PGlite mit dem echten Schema; die App nutzt ihn nur auf
+  localhost mit `localStorage['freundebuch.attrappe'] = 'ja'`. Rundgang: `tests/rundgang.schritte.mjs`.
+- Nach jedem Einspielen ins echte Projekt `tests/abschottung.sql` per Supabase-MCP `execute_sql` ausführen; die
+  Meldung muss `ABSCHOTTUNG_OK` lauten (der Block rollt alles zurück).

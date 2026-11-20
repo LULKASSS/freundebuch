@@ -1,10 +1,25 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Freundebuch</title>
-<meta http-equiv="refresh" content="0; url=entwuerfe/">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#F7F1EA" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1419" media="(prefers-color-scheme: dark)">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex">
+  <title>Freundebuch</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath fill='%23E1D1F3' stroke='%23674990' stroke-width='6' stroke-linejoin='round' d='M60 60c-14-18-38-22-38-6 0 12 22 10 38 6zM60 60c14-18 38-22 38-6 0 12-22 10-38 6z'/%3E%3Cpath fill='none' stroke='%23674990' stroke-width='6' stroke-linecap='round' d='M60 60l-14 30M60 60l14 30'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Young+Serif&display=swap">
+  <link rel="stylesheet" href="app/style.css">
 </head>
-<body><a href="entwuerfe/">Zu den Entwürfen</a></body>
+<body>
+  <a class="sprung" href="#inhalt">Zum Inhalt</a>
+  <main id="inhalt" tabindex="-1"></main>
+  <div id="ueber-ort"></div>
+  <div class="hinweis" role="status" aria-live="polite"></div>
+  <script type="module" src="app/app.js"></script>
+</body>
 </html>

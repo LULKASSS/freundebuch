@@ -1,0 +1,19 @@
+# Supabase pausiert kostenlose Projekte nach 7 Tagen ohne Zugriff. Damit ein Geburtstagslink
+# im Sommer nicht ins Leere läuft, fragt dieser Zeitplan alle drei Tage einmal die Datenbank.
+# Der Schlüssel ist der öffentliche sb_publishable_…, der auch in app/api.js steht.
+name: Datenbank wach halten
+on:
+  schedule:
+    - cron: '17 6 */3 * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  anstupsen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Einmal fragen
+        run: |
+          curl -fsS -X POST 'https://khwjegrwmqgrwviciapg.supabase.co/rest/v1/rpc/gast_liste' \
+            -H 'apikey: sb_publishable_qjmR87-5kRjgzSQ6ua-74A_jRYoS5Xk' \
+            -H 'content-type: application/json' \
+            -d '{"p_schluessel":"wachhalten","p_geraet":"wachhalten-wachhalten-wachhalten-00"}'

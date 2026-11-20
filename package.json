@@ -5,9 +5,12 @@
   "description": "Freundebuch mit Wunschliste",
   "author": "Lukas Rückborn",
   "scripts": {
-    "dev": "node scripts/serve.mjs"
+    "dev": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "pruefen": "node scripts/pruefserver.mjs"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
     "@playwright/test": "^1.64.0"
   }
 }

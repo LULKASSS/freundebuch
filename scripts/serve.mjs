@@ -19,4 +19,4 @@ createServer(async (req, res) => {
   } catch {
     res.writeHead(404).end('nicht gefunden');
   }
-}).listen(port, '127.0.0.1', () => console.log(`Freundebuch läuft auf http://localhost:${port}/entwuerfe/`));
+}).listen(port, '127.0.0.1', () => console.log(`Freundebuch läuft auf http://localhost:${port}/ (Entwürfe unter /entwuerfe/)`));
