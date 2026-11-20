@@ -24,7 +24,7 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
   bei markierten Wünschen, Brevo für Etappe 3, Repo öffentlich. Design: **Entwurf C „Faden“**
   (`entwuerfe/faden/`, Stand Commit 655a212; Lukas, 20.11.2026). Bilder ohne eigenes Hochladen: Link reicht oder kein
   Bild; Klick auf Wunschkarte führt zum Shop. Keine Gäste, kein „Wer bist du?“, kein Aufdecken (Lukas,
-  20.11.2026). **Annahme:** ich sehe nur „3 Wünsche vergeben“, beim Zusammenlegen freiwillig ein Vorname.
+  20.11.2026); ich sehe nur „3 Wünsche vergeben“, beim Zusammenlegen freiwillig ein Vorname (Lukas: „Passt so“).
 - Nicht gewollt: Notiz-App mit Ordnern; starres Formular mit zwanzig Feldern; Lukas' strenger Linear-Look; Blau als
   Themenfarbe; KI-Baukasten-Optik; Titelbalken oben links (kein Logo, kein App-Name, kein Menüzeichen); eigene
   Push-Meldungen; Beträge rechnen beim Zusammenlegen; Kennwort oder Konto für Gäste; Registrieren ohne Einladung.

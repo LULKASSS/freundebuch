@@ -201,7 +201,7 @@ Spalte, ohne Logo. Festhalten und Suche gehen am PC zusätzlich über die Tastat
 1. **Zusammenlegen:** Ich markiere einzelne Wünsche als „zum Zusammenlegen“ (die teuren); nur dort gibt es „Ich bin
    dabei“, sonst „Das schenke ich“. *Alternative: bei jedem Wunsch beides.*
 2. ~~„Wer und wie viele“~~, 3. ~~Aufdecken~~, 4. ~~Gastnamen~~: ersetzt durch Lukas' Wort vom 20.11.2026, keine Gäste.
-   Neue **Annahmen** dazu: (a) Ich sehe von meiner Liste nur die Gesamtzahl „3 Wünsche vergeben“, nie welche.
+   Dazu (von Lukas am 20.11.2026 mit „Passt so“ bestätigt): (a) Ich sehe von meiner Liste nur die Gesamtzahl „3 Wünsche vergeben“, nie welche.
    (b) Beim Zusammenlegen gibt man freiwillig einen Vornamen an, damit sich die Beteiligten absprechen können.
    (c) Verliert jemand sein Gerät, bleibt seine Reservierung stehen (Freigeben ginge nur, wenn ich sehe, welche).
 5. **Maildienst** für Etappe 3: Brevo (Server in der EU, kostenlos bis 300 Mails am Tag) als eigener Versand für die
