@@ -22,7 +22,9 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
   eine Rede auf „Geschichte“ filtere und alles in Reihenfolge habe; der Abschottungstest grün ist.
 - Abgenommen: Plan `docs/plan.md` samt den sechs Annahmen in Abschnitt 6 (Go, Lukas, 20.11.2026): Zusammenlegen nur
   bei markierten Wünschen, je Gast die Anzahl, Aufdecken ab dem Tag nach dem Anlass und nie vorziehbar, Gastnamen
-  einmal anlegen und je Liste wählen, Brevo für Etappe 3, Repo öffentlich.
+  einmal anlegen und je Liste wählen, Brevo für Etappe 3, Repo öffentlich. Design: **Entwurf C „Faden“**
+  (`entwuerfe/faden/`, Stand Commit 655a212; Lukas, 20.11.2026). Bilder ohne eigenes Hochladen: Link reicht oder kein
+  Bild; Klick auf Wunschkarte führt zum Shop.
 - Nicht gewollt: Notiz-App mit Ordnern; starres Formular mit zwanzig Feldern; Lukas' strenger Linear-Look; Blau als
   Themenfarbe; KI-Baukasten-Optik; Titelbalken oben links (kein Logo, kein App-Name, kein Menüzeichen); eigene
   Push-Meldungen; Beträge rechnen beim Zusammenlegen; Kennwort oder Konto für Gäste; Registrieren ohne Einladung.
@@ -46,9 +48,9 @@ Zeile, die es trägt) gilt.
 
 ## Phase
 
-Entwürfe (seit 20.11.2026, Plan freigegeben): vier Designs als klickbare Fassungen in `entwuerfe/` (Personenseite,
-Schnell-Festhalten, Wunschliste; Beispielinhalte erfunden), **STOPP, Lukas wählt eins**. Danach Etappe 1
-(Wunschliste, vor Weihnachten), Etappe 2 (Personenbuch), Etappe 3 (Konten für andere).
+Etappe 1 (Wunschliste, vor Weihnachten), seit 20.11.2026. Design: Entwurf C „Faden“ (abgenommen 20.11.2026); die
+anderen drei Entwürfe bleiben zum Nachschlagen in `entwuerfe/`. Danach Etappe 2 (Personenbuch), Etappe 3 (Konten für
+andere). Offen: ob „Festhalten“ so heißt (Lukas fragte, was es bedeutet; Vorschläge „Notieren“, „Merken“, „＋ Neu“).
 
 ## Arbeitsweise
 
