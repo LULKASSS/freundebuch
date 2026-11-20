@@ -162,6 +162,10 @@ async function attrappe(req, res, url) {
       if (koerper?.email === 'lukas@beispiel.invalid') return antworten(res, 200, {});
       return antworten(res, 422, { code: 'otp_disabled', msg: 'Signups not allowed for otp' });
     }
+    if (p === '/attrappe/auth/v1/verify') {
+      if (koerper?.email === 'lukas@beispiel.invalid' && koerper?.token === '123456') return antworten(res, 200, { access_token: token(ICH), refresh_token: 'attrappe', expires_in: 3600 });
+      return antworten(res, 403, { code: 'otp_expired', msg: 'Token has expired or is invalid' });
+    }
     if (p === '/attrappe/auth/v1/logout') return antworten(res, 204, null);
     if (p === '/attrappe/auth/v1/token') return antworten(res, 200, { access_token: token(ICH), refresh_token: 'attrappe', expires_in: 3600 });
     if (p === '/attrappe/functions/v1/vorschau') {

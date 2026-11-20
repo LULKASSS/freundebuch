@@ -277,27 +277,36 @@ async function gastHandlung(aktion, karte) {
 /* =====================================================================
  * Anmelden
  * ===================================================================== */
-function seiteAnmelden(gesendetAn) {
+/* Anmelden mit Code aus der Mail: Eine App auf dem Home-Bildschirm des iPhones hat ihren eigenen Speicher;
+ * der Link aus der Mail öffnet aber Safari. Den Code tippt man direkt in der App ein. */
+function seiteAnmelden(gesendetAn, fehler = '') {
   if (gesendetAn) {
     return `<article class="seite seite-anmelden">
       <div class="anmelden-schmuck" aria-hidden="true">${SCHMUCK.stern}</div>
       <h1 class="seiten-titel" tabindex="-1">Schau in dein Postfach</h1>
-      <div class="post"><h2>Der Link ist unterwegs</h2><p>An ${esc(gesendetAn)}. Tipp ihn auf diesem Gerät an, dann bist du drin und bleibst es.</p></div>
-      <p class="gast-fuss" style="text-align:left;margin-top:18px"><button class="knopf-text" type="button" data-aktion="anmelden-zurueck">Andere Adresse</button></p>
+      <p class="anmelden-text">Der Code ist unterwegs an ${esc(gesendetAn)}. Gib ihn hier ein, dann bist du drin und bleibst es.</p>
+      <form class="anmelden-form" data-form="code" novalidate>
+        <label class="feld"><span class="feld-name">Code aus der Mail</span><input id="code" class="code-feld" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required ${fehler ? 'aria-invalid="true"' : ''}></label>
+        ${fehler ? `<p class="feld-fehler" role="alert">${esc(fehler)}</p>` : ''}
+        <button class="knopf" type="submit">Anmelden</button>
+      </form>
+      <p class="feld-unter" style="margin-top:18px">Im Browser geht auch der Link in der Mail.</p>
+      <p><button class="knopf-text" type="button" data-aktion="anmelden-zurueck">Andere Adresse oder neuer Code</button></p>
     </article>`;
   }
   return `<article class="seite seite-anmelden">
     <div class="anmelden-schmuck" aria-hidden="true">${SCHMUCK.stern}</div>
     <h1 class="seiten-titel" tabindex="-1">Anmelden</h1>
-    <p class="anmelden-text">Du bekommst einen Link per Mail. Kein Kennwort.</p>
+    <p class="anmelden-text">Du bekommst einen Code per Mail. Kein Kennwort.</p>
     <form class="anmelden-form" data-form="anmelden" novalidate>
       <label class="feld"><span class="feld-name">E-Mail</span><input id="email" type="email" autocomplete="email" inputmode="email" required></label>
       ${zustand.anmeldeFehler ? `<p class="feld-fehler" role="alert">${esc(zustand.anmeldeFehler)}</p>` : ''}
-      <button class="knopf" type="submit">Link schicken</button>
+      <button class="knopf" type="submit">Code schicken</button>
     </form>
   </article>`;
 }
 
+let anmeldeAdresse = '';
 async function anmelden(form) {
   const feld = $('#email', form), email = feld.value.trim();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { feld.setAttribute('aria-invalid', 'true'); zustand.anmeldeFehler = 'Bitte eine E-Mail-Adresse eingeben.'; zeigenAnmelden(); return; }
@@ -307,11 +316,29 @@ async function anmelden(form) {
   try {
     await api.linkSchicken(email);
     zustand.anmeldeFehler = null;
+    anmeldeAdresse = email;
     main.innerHTML = seiteAnmelden(email);
-    $('h1', main).focus();
+    $('#code').focus();
   } catch (e) {
     zustand.anmeldeFehler = e.code === 'kein_konto' || e.code === 'zu_oft' || e.code === 'netz' ? e.message : 'Das hat nicht geklappt. Bitte noch einmal.';
     zeigenAnmelden(email);
+  }
+}
+
+async function codePruefen(form) {
+  const code = $('#code', form).value.replace(/\D/g, '');
+  const nochmal = (text) => { main.innerHTML = seiteAnmelden(anmeldeAdresse, text); $('#code').focus(); };
+  if (code.length < 6) { nochmal('Der Code hat mindestens sechs Ziffern.'); return; }
+  const knopf = $('button[type="submit"]', form);
+  knopf.disabled = true;
+  knopf.textContent = 'Einen Moment …';
+  try {
+    await api.codePruefen(anmeldeAdresse, code);
+    zustand.geladen = false;
+    location.hash = '';
+    zeigen();
+  } catch (e) {
+    nochmal(e.code === 'netz' ? e.message : 'Der Code passt nicht oder ist abgelaufen. Schau, ob es der aus der neuesten Mail ist.');
   }
 }
 function zeigenAnmelden(email = '') {
@@ -685,7 +712,7 @@ document.addEventListener('click', async (ev) => {
       gastHandlung(a, el.closest('[data-wunsch]')); break;
     case 'blatt-zu': blattZu(); break;
     case 'neu-laden': zustand.gast = null; zustand.geladen = false; zeigen(); break;
-    case 'anmelden-zurueck': zeigenAnmelden(); break;
+    case 'anmelden-zurueck': zeigenAnmelden(anmeldeAdresse); break;
     case 'abmelden': await api.abmelden(); Object.assign(zustand, { geladen: false, konto: null, listen: [], wuensche: [], lw: [] }); location.hash = ''; zeigen(); break;
     case 'export': exportieren(); break;
     case 'name': blattOeffnen('name', {}, nameBlatt()); break;
@@ -750,6 +777,7 @@ document.addEventListener('submit', async (ev) => {
   ev.preventDefault();
   switch (f.dataset.form) {
     case 'anmelden': anmelden(f); break;
+    case 'code': codePruefen(f); break;
     case 'liste': listeSpeichern(); break;
     case 'wunsch-link': linkPruefen($('#wunsch-link').value); break;
     case 'wunsch': wunschSpeichern(); break;

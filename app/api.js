@@ -129,6 +129,13 @@ export async function linkSchicken(email) {
   }
 }
 
+/* Code aus der Mail eintippen (für die App auf dem Home-Bildschirm, die den Link nicht abbekommt). */
+export async function codePruefen(email, code) {
+  const t = await anfrage('/auth/v1/verify', { methode: 'POST', gast: true, daten: { type: 'email', email, token: code } });
+  if (!t?.access_token) throw new Fehler('kein Zugang', 401, 'code');
+  merken(ausToken(t));
+}
+
 export async function abmelden() {
   const t = sitzung?.access_token;
   merken(null);

@@ -435,3 +435,5 @@ main { padding: 22px 16px calc(64px + env(safe-area-inset-bottom)); }
 .gast-fuss { color: var(--tinte-leise); font-size: 14px; }
 .fehlerseite { padding-top: 8vh; max-width: 520px; }
 .fehlerseite p { margin-top: 12px; color: var(--tinte-leise); }
+
+.code-feld { font: 400 28px/1.2 var(--titel) !important; letter-spacing: .18em; text-align: center; }

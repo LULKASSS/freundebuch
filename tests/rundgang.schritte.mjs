@@ -54,8 +54,12 @@ export default async (page, foto) => {
   await foto('anmelden-kein-konto');
   await page.fill('#email', 'lukas@beispiel.invalid');
   await page.click('button[type="submit"]');
-  await page.waitForSelector('.post');
-  await foto('anmelden-post');
+  await page.waitForSelector('#code');
+  await foto('anmelden-code');
+  await page.fill('#code', '111111');
+  await page.click('button[type="submit"]');
+  await page.waitForSelector('.feld-fehler');
+  await foto('anmelden-code-falsch');
 
   /* ---------- Ich ---------- */
   await page.evaluate(async () => {

@@ -159,7 +159,7 @@ test('Wunsch per Link anlegen, mit der Tastatur; erscheint danach beim Gast', as
   await ich.ctx.close(); await gast.ctx.close();
 });
 
-test('Anmelden: unbekannte Adresse bekommt den Hinweis „nur auf Einladung“', async () => {
+test('Anmelden: unbekannte Adresse bekommt „nur auf Einladung“, mit dem Code aus der Mail bin ich drin', async () => {
   const { page, ctx } = await geraet({ ziel: `${BASIS}/` });
   await page.fill('#email', 'jemand@beispiel.invalid');
   await page.click('button[type="submit"]');
@@ -167,7 +167,16 @@ test('Anmelden: unbekannte Adresse bekommt den Hinweis „nur auf Einladung“',
   assert.match(await page.textContent('.feld-fehler'), /nur auf Einladung/);
   await page.fill('#email', 'lukas@beispiel.invalid');
   await page.click('button[type="submit"]');
-  await page.waitForSelector('.post');
+  await page.waitForSelector('#code');
+  assert.equal(await page.evaluate(() => document.activeElement?.id), 'code', 'Fokus im Codefeld');
+  await page.fill('#code', '654321');
+  await page.click('button[type="submit"]');
+  await page.waitForSelector('.feld-fehler');
+  assert.match(await page.textContent('.feld-fehler'), /passt nicht/);
+  await page.fill('#code', '123 456');
+  await page.press('#code', 'Enter');
+  await page.waitForSelector('.seite-listen');
+  assert.match(await page.textContent('h1'), /Meine Wunschlisten/);
   await ctx.close();
 });
 
