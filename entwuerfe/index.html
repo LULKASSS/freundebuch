@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Freundebuch · Entwürfe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --grund: #f7f2ec; --karte: #fffdf9; --tinte: #2e2433; --leise: #5f5463; --flieder: #7a5aa6; --linie: #e6dccf; }
+  @media (prefers-color-scheme: dark) {
+    :root { --grund: #1d1820; --karte: #29222d; --tinte: #f1e9f3; --leise: #bcaec1; --flieder: #c8a8f0; --linie: #3a3140; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--grund); color: var(--tinte); font: 17px/1.5 Nunito, system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 24px; font-weight: 800; }
+  ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 16px; }
+  li { background: var(--karte); border: 1px solid var(--linie); border-radius: 22px; padding: 20px; }
+  h2 { margin: 0 0 4px; font-size: 21px; }
+  h2 span { color: var(--flieder); }
+  p { margin: 0 0 14px; color: var(--leise); }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; }
+  a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--grund);
+      color: var(--tinte); text-decoration: none; font-weight: 600; border: 1px solid var(--linie); }
+  a:first-child { background: var(--flieder); color: var(--karte); border-color: transparent; }
+  a:focus-visible { outline: 3px solid var(--flieder); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Vier Entwürfe</h1>
+  <ol>
+    <li>
+      <h2><span>A</span> Poesiealbum</h2>
+      <p>Wie das Freundebuch aus der Schulzeit, erwachsen: Albumseite, Tinte, Notizen auf Linienpapier.</p>
+      <nav><a href="poesiealbum/#person/mia">Personenseite</a><a href="poesiealbum/#gast">Wunschliste als Gast</a><a href="poesiealbum/#liste">Meine Wunschliste</a><a href="poesiealbum/#start">Start</a></nav>
+    </li>
+    <li>
+      <h2><span>B</span> Kärtchen</h2>
+      <p>Dicke runde Karten, jede Art mit eigener Farbe, Sticker statt Felder.</p>
+      <nav><a href="kaertchen/#person/mia">Personenseite</a><a href="kaertchen/#gast">Wunschliste als Gast</a><a href="kaertchen/#liste">Meine Wunschliste</a><a href="kaertchen/#start">Start</a></nav>
+    </li>
+    <li>
+      <h2><span>C</span> Faden</h2>
+      <p>Ein Faden durch das Leben eines Menschen, Einträge hängen als Anhänger daran. Ruhig, wie ein Buch.</p>
+      <nav><a href="faden/#person/mia">Personenseite</a><a href="faden/#gast">Wunschliste als Gast</a><a href="faden/#liste">Meine Wunschliste</a><a href="faden/#start">Start</a></nav>
+    </li>
+    <li>
+      <h2><span>D</span> Pinnwand</h2>
+      <p>Polaroid und Zettel mit Washi-Tape, gesammelt an einer weichen Wand.</p>
+      <nav><a href="pinnwand/#person/mia">Personenseite</a><a href="pinnwand/#gast">Wunschliste als Gast</a><a href="pinnwand/#liste">Meine Wunschliste</a><a href="pinnwand/#start">Start</a></nav>
+    </li>
+  </ol>
+</main>
+</body>
+</html>

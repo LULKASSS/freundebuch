@@ -1,0 +1,1288 @@
+/* Entwurf „Pinnwand“ – weiche, ruhige Wand. Zettel aus Papier mit Washi-Tape, Polaroid oben, Karteikarte als Steckbrief.
+ * Farben als Tokens, dunkel als warmer Filz. Flieder ist der einzige Akzent, kein Blau. */
+
+:root {
+  --hand: 'Shantell Sans', 'Comic Neue', 'Segoe Print', cursive;
+  --ui: 'Atkinson Hyperlegible Next', 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  --grund: #EEE5D6;
+  --grund-punkt: rgba(120, 92, 62, .10);
+  --tinte: #3A2C26;
+  --leise: #6A574B;
+  --linie: rgba(58, 44, 38, .16);
+  --rand: rgba(58, 44, 38, .28);
+  --akzent: #6E4B98;
+  --akzent-tief: #4E3373;
+  --auf-akzent: #FFFFFF;
+  --akzent-zart: #E7DCF3;
+  --fokus: #6E4B98;
+  --leiste-grund: #F6F0E5;
+
+  /* Papier */
+  --papier: #FBF7EF;
+  --creme: #FFFCF5;
+  --butter: #FBEFC4;
+  --rose: #F8DDD8;
+  --salbei: #DCE8D3;
+  --flieder: #E9DEF3;
+  --kraft: #E8DCC6;
+  --pfirsich: #FBE3CF;
+  --marker: #F5DD86;
+  --salbei-rand: #6E8C5E;
+
+  /* Washi-Tape */
+  --tape-0: rgba(190, 160, 226, .72);
+  --tape-1: rgba(232, 190, 104, .66);
+  --tape-2: rgba(166, 198, 150, .74);
+  --tape-3: rgba(234, 160, 162, .64);
+  --tape-mischung: multiply;
+
+  /* Polaroid-Grund je Person */
+  --polaroid: #FFFDF8;
+  --foto-pfirsich: #F2C4A2;
+  --foto-salbei: #B9CEAB;
+  --foto-flieder: #CDB9E4;
+  --foto-sand: #E4CFA6;
+  --foto-rose: #EBB9C0;
+  --foto-tinte: #4A3226;
+
+  --stempel: #7A4CA6;
+  --stempel-rand: rgba(122, 76, 166, .5);
+  --stempel-grund: rgba(255, 252, 245, .9);
+  --knopf-papier: rgba(255, 252, 245, .55);
+  --stempel-mischung: normal;
+
+  --schatten: 0 1px 1px rgba(80, 55, 35, .10), 0 10px 18px -12px rgba(80, 55, 35, .42);
+  --schatten-hoch: 0 2px 2px rgba(80, 55, 35, .10), 0 22px 34px -16px rgba(80, 55, 35, .5);
+
+  --df: .45; /* Drehung am Handy kleiner */
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #251B21;
+    --grund-punkt: rgba(255, 230, 210, .045);
+    --tinte: #F2E8DC;
+    --leise: #CDBCAC;
+    --linie: rgba(242, 232, 220, .14);
+    --rand: rgba(242, 232, 220, .30);
+    --akzent: #D2B8F0;
+    --akzent-tief: #8E6DB8;
+    --auf-akzent: #2A1F33;
+    --akzent-zart: #45395A;
+    --fokus: #D9C2F5;
+    --leiste-grund: #2D2228;
+
+    --papier: #30272A;
+    --creme: #3B3330;
+    --butter: #4A3F36;
+    --rose: #4D3236;
+    --salbei: #363D36;
+    --flieder: #3E3450;
+    --kraft: #3E3634;
+    --pfirsich: #4A3733;
+    --marker: #6A5524;
+    --salbei-rand: #9CB98C;
+
+    --tape-0: rgba(180, 150, 220, .42);
+    --tape-1: rgba(214, 176, 98, .38);
+    --tape-2: rgba(150, 184, 136, .40);
+    --tape-3: rgba(220, 148, 152, .38);
+    --tape-mischung: normal;
+
+    --polaroid: #3E3537;
+    --foto-pfirsich: #7A4E38;
+    --foto-salbei: #4E6347;
+    --foto-flieder: #5E4C78;
+    --foto-sand: #6E5E40;
+    --foto-rose: #74474F;
+    --foto-tinte: #F6EBDD;
+
+    --stempel: #D4B6F4;
+    --stempel-rand: rgba(212, 182, 244, .45);
+    --stempel-grund: rgba(59, 51, 48, .92);
+    --knopf-papier: rgba(20, 12, 16, .18);
+    --stempel-mischung: normal;
+
+    --schatten: 0 1px 1px rgba(0, 0, 0, .35), 0 12px 20px -12px rgba(0, 0, 0, .75);
+    --schatten-hoch: 0 2px 2px rgba(0, 0, 0, .35), 0 24px 36px -16px rgba(0, 0, 0, .85);
+    color-scheme: dark;
+  }
+}
+@media (min-width: 900px) { :root { --df: 1; } }
+
+/* ---------- Grund ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background-color: var(--grund);
+  color: var(--tinte);
+  font: 400 1rem/1.5 var(--ui);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+/* Leinen- bzw. Filzstruktur als eigene Ebene, damit Text auf reiner Farbe steht. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(var(--grund-punkt) 1px, transparent 1.4px),
+    radial-gradient(var(--grund-punkt) 1px, transparent 1.4px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45  0 0 0 0 .34  0 0 0 0 .24  0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 7px 7px, 7px 7px, 160px 160px;
+  background-position: 0 0, 3.5px 3.5px, 0 0;
+}
+img, svg { display: block; }
+a { color: inherit; }
+button { font: inherit; color: inherit; }
+h1, h2, h3, p, ul, dl, dd, figure { margin: 0; }
+ul { padding: 0; list-style: none; }
+:focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+main:focus { outline: none; }
+.unsichtbar { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+[style*="--dreh"] { rotate: calc(var(--dreh) * var(--df) * 1deg); }
+
+.handkopf {
+  font: 650 1.45rem/1.2 var(--hand);
+  font-variation-settings: 'INFM' 45, 'BNCE' 10;
+  margin-bottom: 14px;
+}
+.seitentitel {
+  font: 700 2.2rem/1.1 var(--hand);
+  font-variation-settings: 'INFM' 60, 'BNCE' 15;
+  margin: 6px 0 22px;
+}
+
+/* ---------- Seitenrahmen ---------- */
+main {
+  padding: 22px 16px calc(112px + env(safe-area-inset-bottom));
+  max-width: 1180px;
+}
+body[data-weg="gast"] main { padding-bottom: 48px; margin-inline: auto; max-width: 980px; }
+
+/* ---------- Navigation ---------- */
+.leiste {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: end;
+  padding: 4px 6px calc(6px + env(safe-area-inset-bottom));
+  background: var(--leiste-grund);
+  border-top: 1px solid var(--linie);
+  box-shadow: 0 -8px 20px -14px rgba(60, 40, 30, .35);
+}
+body[data-weg="gast"] .leiste { display: none; }
+.nav-punkt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 58px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  color: var(--leise);
+  font: 700 .76rem/1.1 var(--ui);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-punkt svg { width: 26px; height: 26px; padding: 2px 0; box-sizing: content-box; border-radius: 999px; transition: background-color .2s; }
+.nav-punkt[aria-current="page"] { color: var(--tinte); }
+.nav-punkt[aria-current="page"] svg { background: var(--akzent-zart); padding: 2px 14px; }
+.nav-punkt kbd { display: none; }
+.nav-plus { color: var(--tinte); }
+.plus-kreis {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin-top: -24px;
+  border-radius: 50%;
+  background: var(--akzent);
+  color: var(--auf-akzent);
+  box-shadow: 0 3px 0 var(--akzent-tief), 0 10px 18px -8px rgba(60, 30, 90, .55);
+  rotate: -4deg;
+}
+.plus-kreis svg { width: 30px; height: 30px; }
+
+@media (min-width: 900px) {
+  .leiste {
+    inset: 0 auto 0 0;
+    width: 224px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 40px 18px;
+    background: transparent;
+    border-top: 0;
+    border-right: 1px dashed var(--rand);
+    box-shadow: none;
+  }
+  .nav-punkt {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 14px;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--tinte);
+  }
+  .nav-punkt svg { width: 24px; height: 24px; padding: 0; }
+  .nav-punkt[aria-current="page"] { background: var(--creme); box-shadow: var(--schatten); font-weight: 700; }
+  .nav-punkt[aria-current="page"] svg { background: none; padding: 0; color: var(--akzent); }
+  .nav-punkt:hover:not([aria-current]) { background: var(--linie); }
+  .nav-punkt kbd {
+    display: inline-block;
+    margin-left: auto;
+    min-width: 24px;
+    padding: 1px 6px;
+    border: 1px solid var(--rand);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    font: 700 .78rem/1.3 var(--ui);
+    color: var(--leise);
+    text-align: center;
+  }
+  .nav-plus { margin: 10px 0; background: var(--akzent); color: var(--auf-akzent); box-shadow: 0 3px 0 var(--akzent-tief); }
+  .nav-plus:hover { background: var(--akzent) !important; filter: brightness(1.05); }
+  .nav-plus kbd { color: var(--auf-akzent); border-color: currentColor; }
+  .plus-kreis { width: 24px; height: 24px; margin: 0; background: none; box-shadow: none; color: inherit; rotate: 0deg; }
+  .plus-kreis svg { width: 24px; height: 24px; }
+
+  main { margin-left: 224px; padding: 44px 44px 72px; }
+  body[data-weg="gast"] main { margin-inline: auto; padding: 48px 40px; }
+}
+
+/* ---------- Knöpfe und Chips ---------- */
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  font: 700 .97rem/1 var(--ui);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: translate .12s, box-shadow .12s;
+}
+.knopf svg { width: 20px; height: 20px; flex: none; }
+.knopf.haupt { background: var(--akzent); color: var(--auf-akzent); box-shadow: 0 3px 0 var(--akzent-tief); }
+.knopf.haupt:active { translate: 0 2px; box-shadow: 0 1px 0 var(--akzent-tief); }
+.knopf.zweit { background: var(--creme); color: var(--tinte); border-color: var(--rand); }
+.knopf.leise { background: transparent; color: var(--tinte); border-color: var(--rand); }
+.knopf.aus { background: transparent; color: var(--leise); border: 2px dashed var(--rand); cursor: not-allowed; }
+.knopf.gross { min-height: 52px; font-size: 1.05rem; padding: 0 26px; }
+.knopf:disabled:not(.aus) { opacity: .85; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px 0 10px;
+  border: 1.5px solid var(--rand);
+  border-radius: 999px;
+  background: var(--creme);
+  color: var(--tinte);
+  font: 700 .95rem/1 var(--ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.chip svg { width: 22px; height: 22px; }
+.chip small { font-size: .8rem; font-weight: 700; color: var(--leise); }
+.chip.an { background: var(--akzent); border-color: var(--akzent); color: var(--auf-akzent); }
+.chip.an small { color: var(--auf-akzent); }
+.chip[data-filter="alle"] { padding-left: 16px; }
+
+/* Zeichen der Arten tragen ihre Papierfarbe als Füllung. */
+[data-filter="mag"], [data-fh-art="mag"], [data-setze-art="mag"], .papier-mag .art-knopf { --fuell: var(--rose); }
+[data-filter="magnicht"], [data-fh-art="magnicht"], [data-setze-art="magnicht"], .papier-magnicht .art-knopf { --fuell: var(--kraft); }
+[data-filter="interesse"], [data-fh-art="interesse"], [data-setze-art="interesse"], .papier-interesse .art-knopf { --fuell: var(--salbei); }
+[data-filter="geschichte"], [data-fh-art="geschichte"], [data-setze-art="geschichte"], .papier-geschichte .art-knopf { --fuell: var(--butter); }
+[data-filter="erlebnis"], [data-fh-art="erlebnis"], [data-setze-art="erlebnis"], .papier-erlebnis .art-knopf { --fuell: var(--flieder); }
+[data-filter="geschenkidee"], [data-fh-art="geschenkidee"], [data-setze-art="geschenkidee"], .papier-geschenkidee .art-knopf { --fuell: var(--pfirsich); }
+[data-filter="zitat"], [data-fh-art="zitat"], [data-setze-art="zitat"], .papier-zitat .art-knopf { --fuell: var(--creme); }
+[data-filter^="eigen"], [data-fh-art^="eigen"], [data-setze-art^="eigen"], .papier-eigen .art-knopf { --fuell: var(--akzent-zart); }
+.chip.an { --fuell: transparent; }
+
+/* ---------- Washi-Tape ---------- */
+.tape {
+  position: absolute;
+  top: -12px;
+  left: var(--tx, 50%);
+  width: 86px;
+  height: 25px;
+  transform: translateX(-50%) rotate(var(--td, -2deg));
+  background-color: var(--tape-0);
+  background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, .22) 0 4px, transparent 4px 9px);
+  clip-path: polygon(3% 0, 97% 0, 100% 18%, 96.5% 36%, 100% 54%, 96.5% 72%, 100% 90%, 97% 100%, 3% 100%, 0 82%, 3.5% 64%, 0 46%, 3.5% 28%, 0 10%);
+  mix-blend-mode: var(--tape-mischung);
+  pointer-events: none;
+  z-index: 2;
+}
+.tape-1 { background-color: var(--tape-1); background-image: radial-gradient(rgba(255, 255, 255, .35) 1.4px, transparent 1.8px); background-size: 9px 9px; }
+.tape-2 { background-color: var(--tape-2); }
+.tape-3 { background-color: var(--tape-3); background-image: repeating-linear-gradient(90deg, rgba(255, 255, 255, .25) 0 3px, transparent 3px 12px); }
+
+/* ---------- Personenseite: Kopf ---------- */
+.kopfwand {
+  display: grid;
+  gap: 26px;
+  margin-bottom: 40px;
+}
+.kopf-bild { display: flex; align-items: flex-start; gap: 16px; padding-top: 8px; }
+
+.polaroid {
+  position: relative;
+  flex: none;
+  width: 172px;
+  padding: 10px 10px 0;
+  background: var(--polaroid);
+  box-shadow: var(--schatten-hoch);
+  border-radius: 2px;
+  rotate: calc(var(--dreh) * 1deg) !important;
+}
+.foto {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--foto-farbe, var(--foto-flieder));
+  color: var(--foto-tinte);
+}
+.farbe-pfirsich { --foto-farbe: var(--foto-pfirsich); }
+.farbe-salbei { --foto-farbe: var(--foto-salbei); }
+.farbe-flieder { --foto-farbe: var(--foto-flieder); }
+.farbe-sand { --foto-farbe: var(--foto-sand); }
+.farbe-rose { --foto-farbe: var(--foto-rose); }
+.kritzel { position: absolute; inset: 6%; width: 88%; height: 88%; opacity: .38; }
+.buchstabe {
+  position: relative;
+  font: 700 6rem/1 var(--hand);
+  font-variation-settings: 'INFM' 100, 'BNCE' 0;
+  translate: 2px 4px;
+}
+.polaroid figcaption { display: flex; align-items: baseline; justify-content: center; gap: 6px; padding: 9px 4px 13px; text-align: center; }
+.pol-name {
+  font: 650 1.3rem/1.15 var(--hand);
+  font-variation-settings: 'INFM' 70, 'BNCE' 20;
+  overflow-wrap: anywhere;
+}
+.pol-ich { font: 700 .8rem/1 var(--ui); color: var(--leise); }
+.polaroid.klein { width: 100%; padding: 8px 8px 0; }
+.polaroid.klein .buchstabe { font-size: 4rem; }
+.polaroid.klein .pol-name { font-size: 1.12rem; }
+.polaroid.klein figcaption { padding: 7px 4px 10px; }
+
+.gb-zettel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin-top: 30px;
+  padding: 22px 14px 16px;
+  background: var(--rose);
+  box-shadow: var(--schatten);
+  border-radius: 3px;
+  font-family: var(--hand);
+  font-variation-settings: 'INFM' 55, 'BNCE' 15;
+}
+/* Pinnnadel statt Tape, damit nicht alles gleich hängt */
+.gb-zettel::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff8 0 2px, transparent 3px), var(--akzent);
+  box-shadow: 0 3px 4px -1px rgba(40, 20, 30, .45);
+}
+.gb-zeichen { position: absolute; top: 10px; right: 8px; width: 40px; color: var(--leise); --fuell: var(--butter); }
+.gb-datum { font-size: 1.22rem; font-weight: 650; line-height: 1.2; padding-right: 36px; }
+.gb-alter { font-size: 1.05rem; margin-top: 4px; }
+.gb-tage { margin-top: 8px; }
+.gb-tage span { display: inline-block; padding: 1px 8px; background: var(--marker); border-radius: 4px 9px 5px 10px; font-weight: 700; font-size: 1.1rem; rotate: -1.5deg; }
+
+/* Karteikarte mit Linien */
+.karteikarte {
+  position: relative;
+  padding: 30px 18px 16px;
+  background: var(--creme);
+  box-shadow: var(--schatten);
+  border-radius: 3px;
+}
+.karteikarte::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--akzent-zart), var(--akzent-zart)) 0 22px / 100% 2px no-repeat,
+    repeating-linear-gradient(to bottom, transparent 0 27px, var(--linie) 27px 28px) 0 30px / 100% calc(100% - 40px) no-repeat;
+}
+.karteikarte dl { position: relative; display: grid; }
+.sb-zeile { display: grid; grid-template-columns: 86px minmax(0, 1fr); gap: 0 10px; align-items: baseline; }
+.sb-zeile dt { font: 700 .82rem/28px var(--ui); color: var(--leise); }
+.sb-zeile dd { font: 500 1.06rem/28px var(--hand); font-variation-settings: 'INFM' 50, 'BNCE' 10; }
+.sb-zeile dd.leer { color: var(--leise); }
+.groessen { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.groesse {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 0 10px;
+  border: 1.5px solid var(--rand);
+  border-radius: 8px;
+  background: var(--papier);
+  height: 26px;
+  margin: 1px 0;
+  line-height: 23px;
+}
+.groesse b { font: 700 1.05rem/23px var(--hand); }
+.groesse small { font: 700 .74rem/23px var(--ui); color: var(--leise); }
+.familie { display: flex; flex-wrap: wrap; gap: 0 14px; }
+.fam { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.fam small { font: 700 .76rem/1 var(--ui); color: var(--leise); }
+.fam a { color: var(--akzent); text-decoration: underline wavy; text-decoration-thickness: 1px; text-underline-offset: 4px; font-weight: 650; display: inline-block; padding: 8px 0; margin: -8px 0; }
+
+/* Geschenkideen als Anhänger */
+.geschenke .handkopf, .kopf-seite .handkopf { margin-bottom: 12px; }
+.anhaenger-liste { display: grid; gap: 12px; }
+.anhaenger { filter: drop-shadow(0 1px 1px rgba(80, 55, 35, .12)) drop-shadow(0 6px 8px rgba(80, 55, 35, .18)); }
+.anh-karte {
+  position: relative;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  grid-template-areas: 'bild titel titel' 'bild info stand';
+  align-items: center;
+  gap: 1px 10px;
+  padding: 8px 12px 8px 27px;
+  background: var(--butter);
+  border-radius: 0 12px 12px 0;
+  clip-path: polygon(20px 0, 100% 0, 100% 100%, 20px 100%, 0 calc(100% - 14px), 0 14px);
+}
+.stand-besorgt .anh-karte { background: var(--salbei); }
+.stand-verschenkt .anh-karte { background: var(--kraft); }
+.anh-bild { grid-area: bild; width: 36px; height: 36px; color: var(--tinte); --fuell: var(--creme); }
+.anh-titel { grid-area: titel; font: 700 .96rem/1.25 var(--ui); }
+.anh-info { grid-area: info; display: flex; flex-wrap: wrap; gap: 0 5px; font: 500 .84rem/1.35 var(--ui); color: var(--leise); }
+.anh-karte .stand { grid-area: stand; justify-self: end; }
+.anh-info span { white-space: nowrap; }
+.stand {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  background: none;
+  border-radius: 999px;
+  font: 700 .82rem/1.2 var(--ui);
+  white-space: nowrap;
+  border: 1.5px dashed var(--rand);
+  color: var(--tinte);
+}
+.stand svg { width: 15px; height: 15px; }
+button.stand { cursor: pointer; }
+button.stand::after { content: ''; position: absolute; inset: -10px -4px; } /* Trefferfläche ≥ 44 px */
+button.stand:hover { border-color: var(--tinte); }
+.anhaenger-liste.in-wand { margin: 0 0 22px; }
+.anhaenger.neu { animation: anheften .72s cubic-bezier(.2, .85, .3, 1.12) both; }
+.anhaenger:focus { outline: none; }
+.anhaenger:focus-visible .anh-karte { outline: 3px solid var(--fokus); outline-offset: 3px; }
+.stand-besorgt .stand { border: 1.5px solid var(--salbei-rand); background: var(--creme); }
+.stand-verschenkt .stand { border-style: solid; border-color: transparent; color: var(--leise); }
+.leer-zettel {
+  padding: 14px 16px;
+  border: 2px dashed var(--rand);
+  border-radius: 10px;
+  font: 500 1.05rem/1.3 var(--hand);
+  color: var(--leise);
+  text-align: center;
+}
+.leer-zettel.gross { padding: 28px 16px; font-size: 1.2rem; }
+
+/* Meine Seite: Einkaufszettel und Umschlag */
+.einkaufszettel {
+  position: relative;
+  padding: 26px 18px 12px;
+  background: var(--butter);
+  box-shadow: var(--schatten);
+  border-radius: 3px;
+}
+.einkaufszettel li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1.5px dashed var(--linie);
+  font: 500 1.04rem/1.3 var(--hand);
+  font-variation-settings: 'INFM' 50, 'BNCE' 10;
+}
+.einkaufszettel li small { display: grid; justify-items: end; gap: 2px; font: 700 .8rem/1.1 var(--ui); color: var(--leise); white-space: nowrap; }
+.einkaufszettel li small span { font-weight: 500; font-size: .74rem; }
+.einkaufszettel li.mehr { border: 0; padding-bottom: 0; }
+.einkaufszettel li.mehr a { display: inline-flex; align-items: center; min-height: 44px; color: var(--akzent); font: 700 .95rem/1 var(--ui); text-underline-offset: 4px; }
+.geteilt { margin-bottom: 26px; }
+.geteilt-kopf { font: 700 .82rem/1.2 var(--ui); color: var(--leise); margin-bottom: 8px; }
+.umschlaege { display: grid; gap: 12px; }
+.umschlag {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  padding: 13px 64px 12px 16px;
+  background: var(--kraft);
+  border-radius: 6px;
+  box-shadow: var(--schatten);
+  text-decoration: none;
+  overflow: hidden;
+}
+.umschlag::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto auto;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(225deg, var(--akzent-zart) 0 50%, transparent 50%);
+}
+.umschlag-titel { font: 700 1.3rem/1.2 var(--hand); font-variation-settings: 'INFM' 55; }
+.umschlag:nth-child(2) { background: var(--pfirsich); }
+.umschlag-info { font: 500 .9rem/1.3 var(--ui); color: var(--leise); }
+.umschlag:hover { box-shadow: var(--schatten-hoch); }
+
+/* ---------- Wand mit Zetteln ---------- */
+.wandkopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.wandkopf .handkopf { margin: 0; }
+.reihenfolge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--leise);
+  font: 700 .9rem/1 var(--ui);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.reihenfolge:hover { background: var(--linie); color: var(--tinte); }
+.pfeil-quer { font-family: var(--hand); font-size: 1.1rem; }
+.filter {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 0 -16px 26px;
+  padding: 6px 16px 8px;
+  scrollbar-width: none;
+  scroll-padding-inline: 16px;
+}
+.filter::-webkit-scrollbar { display: none; }
+
+/* Einfaches Raster in Datumsfolge: zeilenweise von links nach rechts gelesen stimmt die Reihenfolge. */
+.wand {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px 24px;
+  align-items: start;
+}
+.platz { min-width: 0; padding-top: 12px; }
+.zettel {
+  position: relative;
+  padding: 22px 18px 14px;
+  background: var(--p, var(--creme));
+  box-shadow: var(--schatten);
+  border-radius: 2px 3px 6px 3px;
+}
+.papier-geschichte { --p: var(--butter); }
+.papier-erlebnis { --p: var(--flieder); }
+.papier-mag { --p: var(--rose); }
+.papier-magnicht { --p: var(--kraft); }
+.papier-interesse { --p: var(--salbei); }
+.papier-zitat { --p: var(--creme); }
+.papier-geschenkidee { --p: var(--pfirsich); }
+.papier-ohne { --p: var(--papier); }
+.papier-eigen { --p: var(--papier); }
+/* Am Handy: kurze Zettel schmaler und abwechselnd versetzt, damit es wie eine Wand wirkt. */
+.wand .zettel.schrift-gross { width: 82%; }
+.wand .zettel.schrift-mittel { width: 93%; }
+.wand .platz:nth-child(even) .zettel { margin-left: auto; }
+
+.art-knopf {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 3px 11px 3px 6px;
+  border: 1px solid var(--rand);
+  border-radius: 999px;
+  background: var(--knopf-papier);
+  color: var(--tinte);
+  font: 700 .82rem/1 var(--ui);
+  cursor: pointer;
+}
+.art-knopf::after { content: ''; position: absolute; inset: -7px -4px; } /* Trefferfläche ≥ 44 px */
+.art-knopf svg { width: 20px; height: 20px; }
+.art-knopf.ohne { border-style: dashed; color: var(--leise); }
+.art-knopf:hover { border-color: var(--tinte); }
+.art-knopf.frisch { animation: frisch .45s ease-out; }
+.zettel-text {
+  margin: 12px 0 10px;
+  font: 450 1.12rem/1.42 var(--hand);
+  font-variation-settings: 'INFM' 55, 'BNCE' 22;
+  text-wrap: pretty;
+}
+.schrift-gross .zettel-text { font-size: 1.42rem; line-height: 1.28; }
+.schrift-klein .zettel-text { font-size: 1.03rem; line-height: 1.45; }
+.papier-zitat .zettel-text { font-style: italic; font-variation-settings: 'INFM' 80, 'BNCE' 30; }
+.zettel time { display: block; text-align: right; font: 500 .9rem/1.2 var(--hand); color: var(--leise); }
+
+/* Frisch angeheftet: von oben auf die Wand, dann klebt das Tape. */
+.zettel.neu { animation: anheften .72s cubic-bezier(.2, .85, .3, 1.12) both; }
+.zettel.neu .tape { animation: tape-drauf .34s .46s ease-out both; }
+@keyframes anheften {
+  0% { opacity: 0; transform: translateY(-40px) scale(1.07) rotate(-5deg); box-shadow: var(--schatten-hoch); }
+  55% { opacity: 1; transform: translateY(4px) scale(.99) rotate(.8deg); }
+  100% { transform: none; }
+}
+@keyframes tape-drauf { from { opacity: 0; transform: translateX(-50%) rotate(var(--td)) scaleX(.3); } }
+@keyframes frisch { 40% { transform: scale(1.14); } }
+
+/* ---------- Art-Auswahl ---------- */
+.artwahl {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  gap: 2px;
+  min-width: 200px;
+  padding: 6px;
+  background: var(--creme);
+  border: 1px solid var(--linie);
+  border-radius: 14px;
+  box-shadow: var(--schatten-hoch);
+  animation: auf .16s ease-out;
+}
+.artwahl[hidden] { display: none; }
+.artwahl button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 12px 0 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font: 500 .98rem/1 var(--ui);
+  text-align: left;
+  cursor: pointer;
+}
+.artwahl button svg { width: 24px; height: 24px; }
+.artwahl button:hover { background: var(--linie); }
+.artwahl button[aria-checked="true"] { background: var(--akzent-zart); font-weight: 700; }
+.artwahl button.ohne { color: var(--leise); }
+.artwahl .art-neu { border-top: 1.5px dashed var(--linie); border-radius: 0 0 10px 10px; margin-top: 2px; font-weight: 700; }
+.artwahl .art-neu svg { width: 20px; height: 20px; margin: 0 2px; }
+.art-neu-feld {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin-top: 2px;
+  padding: 0 10px 0 8px;
+  border: 2px solid var(--akzent);
+  border-radius: 10px;
+  --fuell: var(--akzent-zart);
+}
+.art-neu-feld svg { width: 24px; height: 24px; flex: none; }
+.art-neu-feld input { flex: 1; width: 8em; }
+.art-neu-feld:focus-within { outline: 3px solid var(--fokus); outline-offset: 2px; }
+@keyframes auf { from { opacity: 0; transform: translateY(-4px); } }
+
+/* ---------- Festhalten ---------- */
+#festhalten {
+  width: 100%;
+  max-width: none;
+  max-height: 94dvh;
+  margin: auto 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--tinte);
+  overflow: visible;
+}
+#festhalten::backdrop { background: rgba(40, 26, 30, .38); }
+.blatt {
+  padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+  background: var(--papier);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 30px -12px rgba(40, 20, 20, .4);
+  animation: blatt-hoch .3s cubic-bezier(.2, .8, .3, 1);
+}
+.blatt-kopf { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.blatt-kopf .handkopf { margin: 0; }
+.rund-knopf {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--linie);
+  cursor: pointer;
+}
+.rund-knopf svg { width: 22px; height: 22px; }
+.fh-suche { display: flex; align-items: center; gap: 10px; }
+.fh-suche span { font: 650 1.15rem/1 var(--hand); }
+.fh-suche input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  border-bottom: 2px dashed var(--rand);
+  background: transparent;
+  color: var(--tinte);
+  font: 500 1rem/1 var(--ui);
+}
+.fh-suche input:focus { outline: none; border-bottom: 2px solid var(--fokus); }
+.fh-suche input::placeholder { color: var(--leise); }
+/* Wischbare Reihen im Blatt: alle Menschen, alle Arten, je einzeilig. */
+.personen-wahl, .fh-arten {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin-inline: -16px;
+  padding: 4px 16px;
+  scroll-padding-inline: 16px;
+  scrollbar-width: none;
+}
+.personen-wahl::-webkit-scrollbar, .fh-arten::-webkit-scrollbar { display: none; }
+/* Weich auslaufende Ränder zeigen, dass die Reihe weitergeht. */
+.personen-wahl, .fh-arten {
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%);
+}
+.personen-wahl { margin-top: 6px; margin-bottom: 12px; min-height: 52px; }
+.person-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px 0 6px;
+  border: 1.5px solid var(--rand);
+  border-radius: 999px;
+  background: var(--creme);
+  font: 700 .95rem/1 var(--ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.person-chip.an { background: var(--akzent); border-color: var(--akzent); color: var(--auf-akzent); }
+.person-chip.erster:not(.an) { border: 2px dashed var(--akzent); }
+.fh-keiner { align-self: center; color: var(--leise); font: 500 1rem var(--hand); }
+.mini-kreis {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--foto-farbe);
+  color: var(--foto-tinte);
+  font: 700 1rem/1 var(--hand);
+}
+.fh-notiz {
+  position: relative;
+  margin: 4px 4px 16px;
+  padding: 20px 14px 8px;
+  background: var(--butter);
+  box-shadow: var(--schatten);
+  rotate: -.6deg;
+  border-radius: 2px;
+}
+.fh-notiz:focus-within { outline: 3px solid var(--fokus); outline-offset: 3px; }
+.fh-notiz textarea {
+  display: block;
+  width: 100%;
+  min-height: 108px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: repeating-linear-gradient(to bottom, transparent 0 35px, var(--linie) 35px 36px);
+  color: var(--tinte);
+  font: 500 1.22rem/36px var(--hand);
+  font-variation-settings: 'INFM' 55, 'BNCE' 15;
+}
+.fh-notiz textarea::placeholder { color: var(--leise); }
+.wackelt { animation: wackeln .35s; }
+@keyframes wackeln { 25% { translate: -4px 0; } 75% { translate: 4px 0; } }
+.fh-arten { gap: 6px; margin-bottom: 14px; }
+.plus-art { border-style: dashed; color: var(--tinte); padding: 0 14px 0 8px; }
+.plus-art svg { width: 18px; height: 18px; }
+.art-feld { cursor: text; padding: 0 6px 0 8px; border-color: var(--akzent); border-width: 2px; --fuell: var(--akzent-zart); }
+.art-feld input, .art-neu-feld input {
+  width: 9.5em;
+  min-width: 0;
+  height: 36px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--tinte);
+  font: 700 .95rem/1 var(--ui);
+}
+.art-feld input::placeholder, .art-neu-feld input::placeholder { color: var(--leise); font-weight: 500; }
+.art-feld:focus-within { outline: 3px solid var(--fokus); outline-offset: 2px; }
+#fh-speichern[aria-disabled="true"] { opacity: .55; box-shadow: none; cursor: not-allowed; }
+.chip.klein { min-height: 44px; padding: 0 12px 0 8px; font-size: .9rem; }
+.chip.klein svg { width: 20px; height: 20px; }
+.blatt-fuss { display: flex; justify-content: flex-end; }
+.blatt-fuss .knopf { width: 100%; }
+@keyframes blatt-hoch { from { transform: translateY(40%); opacity: .4; } }
+
+@media (min-width: 900px) {
+  #festhalten { width: min(560px, calc(100% - 32px)); margin: auto; }
+  .blatt { border-radius: 20px; padding: 22px 26px 24px; box-shadow: var(--schatten-hoch); animation: blatt-auf .24s ease-out; }
+  .blatt-fuss .knopf { width: auto; }
+  @keyframes blatt-auf { from { transform: translateY(12px) scale(.98); opacity: 0; } }
+}
+
+/* ---------- Hinweis ---------- */
+.hinweis {
+  position: fixed;
+  left: 50%;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 70;
+  transform: translate(-50%, 16px) rotate(-1deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .3s cubic-bezier(.2, .8, .3, 1.2);
+}
+.hinweis span {
+  display: block;
+  padding: 11px 18px;
+  background: var(--tinte);
+  color: var(--grund);
+  border-radius: 6px;
+  font: 700 .98rem/1.2 var(--ui);
+  white-space: nowrap;
+  box-shadow: var(--schatten-hoch);
+}
+.hinweis.zeigt { opacity: 1; transform: translate(-50%, 0) rotate(-1deg); }
+.hinweis a { color: inherit; font-weight: 700; text-decoration: underline wavy; text-decoration-thickness: 1px; text-underline-offset: 4px; display: inline-block; padding: 10px 2px; margin: -10px 0; }
+.hinweis.zeigt a { pointer-events: auto; }
+@media (min-width: 900px) { .hinweis { bottom: 32px; left: calc(50% + 112px); } }
+
+/* ---------- Start ---------- */
+.heute-zeile { font: 500 1.08rem/1.3 var(--hand); color: var(--leise); margin-bottom: 26px; }
+.blickfang {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px;
+  grid-template-areas: 'kuchen bild' 'titel bild' 'wann wann' 'geschenk geschenk';
+  gap: 0 14px;
+  align-items: start;
+  padding: 26px 16px 22px 20px;
+  background: var(--butter);
+  box-shadow: var(--schatten-hoch);
+  border-radius: 3px;
+  text-decoration: none;
+  margin-bottom: 40px;
+}
+.bf-text { display: contents; }
+.bf-kuchen { grid-area: kuchen; display: block; width: 56px; color: var(--tinte); --fuell: var(--rose); margin: -4px 0 4px -6px; }
+.bf-titel {
+  grid-area: titel;
+  font: 750 1.9rem/1.05 var(--hand);
+  font-variation-settings: 'INFM' 70, 'BNCE' 25;
+}
+.bf-wann { grid-area: wann; display: grid; gap: 2px; margin-top: 10px; font: 500 1.06rem/1.3 var(--hand); }
+.bf-wann b { font-size: 1.3rem; }
+.bf-geschenk {
+  grid-area: geschenk;
+  justify-self: start;
+  white-space: nowrap;
+  display: inline-block;
+  margin-top: 14px;
+  padding: 5px 12px;
+  border: 1.5px dashed var(--rand);
+  border-radius: 999px;
+  font: 700 .9rem/1.2 var(--ui);
+}
+.bf-geschenk.ok { border-style: solid; border-color: var(--salbei-rand); }
+.bf-bild { grid-area: bild; margin-top: -42px; }
+.bf-bild .polaroid { box-shadow: var(--schatten-hoch); }
+.blickfang:hover .bf-bild .polaroid { translate: 0 -3px; }
+.start-raster { display: grid; gap: 34px; }
+.start-gruppe { position: relative; padding: 26px 16px 10px; background: var(--creme); box-shadow: var(--schatten); border-radius: 3px; }
+.start-gruppe.fehlt { background: var(--pfirsich); }
+.bald-liste a, .fehlt-liste a {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 6px 4px;
+  border-top: 1.5px dashed var(--linie);
+  text-decoration: none;
+}
+.fehlt-liste a { grid-template-columns: 34px minmax(0, 1fr) auto; }
+.bald-liste a:hover .bald-name, .fehlt-liste a:hover .fehlt-name { text-decoration: underline; text-underline-offset: 4px; }
+.bald-datum { display: grid; justify-items: center; font: 600 .82rem/1.1 var(--hand); color: var(--leise); }
+.bald-datum b { font-size: 1.5rem; line-height: 1; color: var(--tinte); }
+.bald-name, .fehlt-name { display: grid; font: 650 1.15rem/1.2 var(--hand); }
+.bald-name small, .fehlt-name small { font: 500 .86rem/1.3 var(--ui); color: var(--leise); }
+.bald-tage { font: 700 .86rem/1 var(--ui); color: var(--leise); white-space: nowrap; }
+.fehlt-ideen { font: 700 .82rem/1 var(--ui); white-space: nowrap; padding: 4px 9px; border: 1.5px dashed var(--rand); border-radius: 999px; }
+
+/* ---------- Menschen ---------- */
+.polaroid-wand { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 20px; padding-top: 6px; }
+.pol-link { display: block; text-decoration: none; }
+.pol-link .polaroid { transition: translate .2s, rotate .2s; }
+.pol-link:hover .polaroid { translate: 0 -4px; }
+.pol-unter { display: block; margin-top: 10px; text-align: center; font: 700 .86rem/1.2 var(--ui); color: var(--leise); }
+
+/* ---------- Suche ---------- */
+.suchfeld {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 0 18px;
+  background: var(--creme);
+  border-radius: 18px;
+  box-shadow: var(--schatten);
+  margin-bottom: 28px;
+}
+.suchfeld svg { width: 26px; height: 26px; color: var(--leise); flex: none; }
+.suchfeld:focus-within { outline: 3px solid var(--fokus); outline-offset: 3px; }
+.suchfeld input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--tinte);
+  font: 500 1.3rem/1 var(--hand);
+  font-variation-settings: 'INFM' 50;
+}
+.suchfeld input::placeholder { color: var(--leise); }
+/* Eigenes „×“ statt des blauen Browser-Zeichens. */
+.suchfeld input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-left: 8px;
+  background-color: var(--tinte);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6.5 6.8 17.4 17.3M17.3 6.6 6.8 17.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Cpath d='M6.5 6.8 17.4 17.3M17.3 6.6 6.8 17.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  cursor: pointer;
+}
+.suchfeld input::-webkit-search-cancel-button:hover { background-color: var(--akzent); }
+.treffer section { margin-bottom: 28px; }
+.treffer-kopf { font: 650 1.2rem/1.2 var(--hand); margin-bottom: 12px; }
+.treffer-liste { display: grid; gap: 14px; }
+.treffer-mensch, .treffer-idee {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 14px;
+  background: var(--creme);
+  border-radius: 12px;
+  box-shadow: var(--schatten);
+  text-decoration: none;
+}
+.treffer-mensch > span:last-child, .treffer-idee > span:nth-child(2) { display: grid; flex: 1; min-width: 0; }
+.treffer-mensch b, .treffer-idee b { font: 700 1rem/1.3 var(--ui); }
+.treffer-mensch small, .treffer-idee small { font: 500 .88rem/1.3 var(--ui); color: var(--leise); }
+.treffer-idee { background: var(--butter); }
+.treffer-idee.stand-besorgt { background: var(--salbei); }
+.treffer-idee.stand-verschenkt { background: var(--kraft); }
+.treffer-idee .anh-bild { width: 40px; height: 40px; }
+.treffer-zettel {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  background: var(--p);
+  box-shadow: var(--schatten);
+  border-radius: 3px;
+  text-decoration: none;
+}
+.tz-kopf { font: 500 .86rem/1.3 var(--ui); color: var(--leise); }
+.tz-kopf b { color: var(--tinte); }
+.tz-text { font: 500 1.12rem/1.4 var(--hand); font-variation-settings: 'INFM' 55, 'BNCE' 15; }
+mark { background: var(--marker); color: inherit; border-radius: 3px 6px 4px 7px; padding: 0 .1em; margin: 0 -.1em; }
+
+/* ---------- Meine Wunschliste ---------- */
+/* Leiser Wechsel zwischen meinen Listen, einzeilig. */
+.listen-wechsel { display: flex; flex-wrap: nowrap; gap: 4px; margin: -6px 0 6px -10px; }
+.listen-wechsel a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: var(--leise);
+  font: 700 .9rem/1 var(--ui);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.listen-wechsel a:hover { color: var(--tinte); background: var(--linie); }
+.listen-wechsel a[aria-current="page"] { color: var(--tinte); text-decoration: underline wavy var(--akzent); text-decoration-thickness: 1.5px; text-underline-offset: 6px; }
+.listenkopf .seitentitel { margin: 4px 0 4px; }
+.listen-info { font: 500 1.06rem/1.3 var(--hand); color: var(--leise); }
+.knopfreihe { display: flex; flex-wrap: nowrap; gap: 10px; margin: 18px 0 30px; }
+.knopfreihe .knopf { padding: 0 15px; }
+.knopfreihe .knopf svg { display: none; }
+.listen-raster { display: grid; gap: 34px; align-items: start; }
+.gaeste-zettel { position: relative; padding: 26px 18px 18px; background: var(--flieder); box-shadow: var(--schatten); border-radius: 3px; }
+.gaeste-zettel ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; }
+.gaeste-zettel li { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; border-bottom: 1.5px dashed var(--linie); }
+.g-name { font: 600 1.12rem/1.2 var(--hand); }
+.gaeste-zettel li.null .g-name { color: var(--leise); }
+.striche { height: 22px; width: auto; color: var(--tinte); }
+.gaeste-zettel .knopf { width: 100%; margin-top: 16px; }
+.wunsch-zettel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 2px 14px;
+  padding: 22px 16px 16px;
+  background: var(--creme);
+  box-shadow: var(--schatten);
+  border-radius: 3px;
+}
+.wunschwand .platz:nth-child(4n+2) .wunsch-zettel { background: var(--butter); }
+.wunschwand .platz:nth-child(4n+3) .wunsch-zettel { background: var(--salbei); }
+.wunschwand .platz:nth-child(4n) .wunsch-zettel { background: var(--rose); }
+.wunschwand .platz:nth-child(even) .wunsch-zettel { margin-left: 0; }
+.wz-bild { display: block; grid-row: span 4; width: 76px; height: 76px; padding: 6px; background: var(--papier); border-radius: 10px; color: var(--tinte); --fuell: var(--flieder); }
+.wz-titel { font: 650 1.15rem/1.25 var(--hand); font-variation-settings: 'INFM' 50, 'BNCE' 10; }
+.wz-titel a, .w-titel a { color: inherit; text-decoration: none; }
+.wz-titel a:hover, .w-titel a:hover { text-decoration: underline wavy; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.wz-bild:hover, .w-bild:hover { translate: 0 -2px; }
+.wz-haendler { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font: 500 .88rem/1.3 var(--ui); color: var(--leise); }
+.wz-beschr { font: 400 .92rem/1.4 var(--ui); color: var(--leise); }
+.wz-preis { font: 700 .88rem/1.3 var(--ui); margin-top: 4px; }
+.zl-marke { color: var(--tinte); padding: 2px 8px; border: 1.5px dashed var(--rand); border-radius: 999px; font-size: .78rem; white-space: nowrap; }
+
+/* ---------- Gast ---------- */
+.gast-kopf { position: relative; margin-bottom: 26px; }
+.gast-oben { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; margin-top: -8px; }
+.gast-wer { display: flex; align-items: center; gap: 6px; white-space: nowrap; font: 700 .92rem/1 var(--ui); color: var(--tinte); }
+.gast-wer > span:nth-child(2) { color: var(--leise); }
+.gast-wer .leise-knopf { margin-left: -4px; }
+.gast-ueber { font: 500 1.15rem/1.3 var(--hand); color: var(--leise); }
+.gast-titel, .gast-anlass { font: 750 2.2rem/1.1 var(--hand); font-variation-settings: 'INFM' 65, 'BNCE' 20; margin-top: 2px; }
+.gast-anlass { font-size: 1.4rem; }
+.leise-knopf {
+  flex: none;
+  margin-right: -10px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--leise);
+  font: 700 .88rem/1 var(--ui);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.wer .gast-kopf { text-align: center; padding: 0; margin-bottom: 18px; }
+.wer-frage { font: 750 2.5rem/1.1 var(--hand); font-variation-settings: 'INFM' 70, 'BNCE' 30; text-align: center; margin-bottom: 28px; }
+.namensschilder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; max-width: 640px; margin: 0 auto; }
+.namensschild {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 118px;
+  padding: 0;
+  border: 0;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--creme);
+  box-shadow: var(--schatten);
+  cursor: pointer;
+  transition: translate .15s, box-shadow .15s;
+}
+.namensschild:hover { translate: 0 -3px; box-shadow: var(--schatten-hoch); }
+.ns-band { display: block; padding: 8px 6px; background: var(--akzent); color: var(--auf-akzent); font: 700 .84rem/1.1 var(--ui); }
+.ns-name { flex: 1; display: grid; place-items: center; padding: 8px; font: 650 1.65rem/1.1 var(--hand); font-variation-settings: 'INFM' 80, 'BNCE' 25; }
+.vorschau-ende { display: table; margin: 40px auto 0; padding: 12px; color: var(--leise); font: 700 .9rem/1 var(--ui); text-underline-offset: 3px; }
+
+.von-dir { margin-bottom: 34px; padding: 18px 14px 6px; margin-inline: -6px; border: 2px dashed var(--stempel-rand); border-radius: 18px; }
+.von-dir .handkopf { color: var(--tinte); }
+.gast-wand { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px 24px; padding-top: 12px; }
+section + section .gast-wand, .gast-wand { margin-bottom: 8px; }
+.wunsch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 4px 14px;
+  padding: 24px 16px 12px;
+  background: var(--creme);
+  box-shadow: var(--schatten);
+  border-radius: 3px;
+}
+.gast-wand .wunsch:nth-child(4n+2) { background: var(--butter); }
+.gast-wand .wunsch:nth-child(4n+3) { background: var(--salbei); }
+.gast-wand .wunsch:nth-child(4n) { background: var(--rose); }
+.w-bild { display: block; transition: translate .15s; width: 92px; height: 92px; padding: 8px; background: var(--papier); border-radius: 10px; color: var(--tinte); --fuell: var(--flieder); }
+.w-titel { font: 650 1.22rem/1.2 var(--hand); font-variation-settings: 'INFM' 50, 'BNCE' 10; overflow-wrap: anywhere; }
+.w-beschr { font: 400 .93rem/1.4 var(--ui); color: var(--leise); margin-top: 3px; }
+.w-preis { font: 700 .92rem/1.3 var(--ui); margin-top: 6px; }
+.w-haendler { font: 500 .88rem/1.3 var(--ui); color: var(--leise); }
+.zl-zeile {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding: 7px 12px;
+  background: var(--knopf-papier);
+  border: 1.5px dashed var(--rand);
+  border-radius: 10px;
+  font: 500 .92rem/1.35 var(--ui);
+}
+.w-knoepfe { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; flex-wrap: nowrap; }
+.w-aktionen { display: flex; gap: 8px; flex-wrap: nowrap; }
+.w-aktionen .knopf { padding: 0 14px; }
+.shop-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--tinte);
+  font: 700 .93rem/1 var(--ui);
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+.shop-link svg { width: 17px; height: 17px; }
+.stempel-platz {
+  position: absolute;
+  left: 62px;
+  top: 70px;
+  width: 104px;
+  height: 104px;
+  transform: translate(-50%, -50%) rotate(-12deg);
+  color: var(--stempel);
+  opacity: .9;
+  mix-blend-mode: var(--stempel-mischung);
+  pointer-events: none;
+  z-index: 3;
+}
+.stempel { width: 100%; height: 100%; font-family: var(--hand); }
+
+/* Übergang beim Umstellen (Reservieren, Zurücknehmen, Dabei) */
+::view-transition-group(*) { animation-duration: .4s; animation-timing-function: cubic-bezier(.3, .7, .2, 1); }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .25s; }
+
+/* ---------- PC ---------- */
+@media (min-width: 640px) {
+  .wand { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wand .zettel.schrift-gross, .wand .zettel.schrift-mittel { width: auto; }
+  .gast-wand { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .namensschilder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .polaroid-wand { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 36px 28px; }
+  .knopfreihe .knopf svg { display: block; }
+}
+@media (min-width: 900px) {
+  .kopfwand {
+    grid-template-columns: 220px minmax(0, 1.05fr) minmax(0, 1fr);
+    grid-template-areas: 'bild karte seite' 'bild gb seite';
+    grid-template-rows: auto 1fr;
+    gap: 0 34px;
+    align-items: start;
+    margin-bottom: 52px;
+  }
+  .kopf-bild { display: contents; }
+  .kopfwand .polaroid { grid-area: bild; width: 210px; margin-top: 8px; }
+  .karteikarte { grid-area: karte; }
+  .kopf-seite { grid-area: seite; }
+  .gb-zettel { grid-area: gb; width: 200px; margin: 26px 0 0 40px; flex: none; }
+  .karteikarte { margin-top: 18px; }
+  .kopf-seite { margin-top: 10px; }
+  .sb-zeile { grid-template-columns: 104px minmax(0, 1fr); }
+  .filter { margin: 0 0 30px; padding: 6px 4px 8px; gap: 5px; }
+  .filter .chip { padding: 0 11px 0 7px; gap: 5px; font-size: .9rem; }
+  .filter .chip svg { width: 20px; height: 20px; }
+  .wand { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px 30px; }
+  .seitentitel { font-size: 2.6rem; }
+
+  .blickfang { grid-template-columns: minmax(0, 1fr) 190px; grid-template-areas: 'kuchen bild' 'titel bild' 'wann bild' 'geschenk bild'; max-width: 760px; padding: 34px 34px 30px 36px; gap: 0 30px; }
+  .bf-titel { font-size: 3.2rem; }
+  .bf-bild { margin-top: -54px; }
+  .start-raster { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 34px; max-width: 900px; }
+
+  .listen-raster { grid-template-columns: 260px minmax(0, 1fr); gap: 40px; }
+  .gaeste-zettel ul { grid-template-columns: minmax(0, 1fr); }
+  .wunschwand { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 26px 30px; }
+  .listenkopf { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 24px; margin-bottom: 30px; }
+  .listenkopf .knopfreihe { grid-column: 2; grid-row: 1 / span 3; margin: 0; }
+
+  .gast-kopf { margin-bottom: 34px; }
+  .gast-titel { font-size: 2.8rem; }
+  .gast-wand { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 36px 30px; }
+  .von-dir { padding: 22px 22px 14px; margin-inline: -22px; }
+  .treffer-liste { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .suchfeld { max-width: 680px; }
+}
+
+/* ---------- Ruhige Bewegung ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; }
+  .zettel.neu { animation: einblenden .2s ease-out both; }
+  .zettel.neu .tape, .blatt, .artwahl, .art-knopf.frisch, .fh-notiz textarea.wackelt { animation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+  @keyframes einblenden { from { opacity: 0; } }
+}
+
+/* Nachträge */
+.person-chip[hidden] { display: none; }
+.anh-info span:first-child:not(:last-child)::after { content: ' ·'; }
+/* Keine automatische Silbentrennung; Überschriften brechen nur an Leerzeichen, Bindestrich oder weichem Trennzeichen. */
+.wz-titel, .w-titel, .anh-titel { hyphens: manual; overflow-wrap: break-word; }
+.zettel-text, .tz-text { overflow-wrap: break-word; }
+
+/* Handy: Kopf der Personenseite etwas knapper, damit die Wand früher beginnt. */
+@media (max-width: 899px) {
+  .kopfwand { gap: 18px; margin-bottom: 30px; }
+  .kopf-bild { padding-top: 4px; }
+  .kopf-bild .polaroid { width: 148px; padding: 8px 8px 0; }
+  .kopf-bild .buchstabe { font-size: 5rem; }
+  .kopf-bild .polaroid figcaption { padding: 7px 4px 10px; }
+  .kopf-bild .pol-name { font-size: 1.15rem; }
+  .gb-zettel { margin-top: 20px; padding: 20px 12px 14px; }
+  .karteikarte { padding: 28px 16px 10px; }
+  .geschenke .handkopf, .kopf-seite .handkopf { margin-bottom: 8px; font-size: 1.3rem; }
+  .anhaenger-liste { gap: 9px; }
+  .wandkopf { margin-bottom: 2px; }
+}
+@media (min-width: 900px) {
+  .personen-wahl, .fh-arten { margin-inline: -26px; padding-inline: 26px; scroll-padding-inline: 26px; }
+  .anhaenger-liste.in-wand { grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px 30px; margin-bottom: 30px; }
+}

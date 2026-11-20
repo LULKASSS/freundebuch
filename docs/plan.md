@@ -112,8 +112,10 @@ fremde_liste     konto_id, link_schluessel, person_id   (wessen Liste ist das in
 
 ### 3.3 Edge Functions
 - `vorschau` (nur angemeldet): lädt die Shop-Seite, liest Open Graph und JSON-LD (Titel, Bild, Preis), Händler aus
-  der Adresse (amazon.de → Amazon, decathlon.de → Decathlon, sonst Seitenname). Bei Amazon ohne Antwort: Titel aus der
-  Adresse. Nur `http(s)`, keine internen Adressen. Bild wird in den eigenen Speicher übernommen.
+  der Adresse (amazon.de → Amazon, decathlon.de → Decathlon, sonst Seitenname). Bild in dieser Reihenfolge: Open Graph,
+  JSON-LD, sonst das erste große Produktbild der Seite (bei Amazon das Hauptbild aus dem Seitencode, notfalls über die
+  ASIN). Gibt die Seite nichts her (Amazon sperrt Server-Abrufe zeitweise): Titel aus der Adresse, Karte ohne Foto mit
+  Zeichnung. Nur `http(s)`, keine internen Adressen. Bild wird in den eigenen Speicher übernommen.
 - `kalender?s=<schluessel>`: Geburtstage als abonnierbarer Kalender (nur Name und Tag, keine Einträge), Schlüssel
   neu erzeugbar.
 - `konto_loeschen` (Etappe 3), `einladen` (Etappe 3, nur Lukas).
@@ -152,7 +154,9 @@ Handy zuerst, PC als breitere Fassung derselben Seiten. Oben links nie ein Titel
    Gäste mit Anzahl („Mama · 2, Ben · 1“), „So sehen es deine Leute“ (Vorschau), „Aufdecken ab 25.12.“ (vorher
    ausgegraut). Wünsche aus meinen anderen Listen per Tipp dazunehmen.
 7. **Wunsch anlegen.** Ein Feld „Link einfügen“ (am Handy mit Einfügen-Knopf). Danach sind Bild, Titel, Preis, Händler
-   vorgefüllt und jedes Feld direkt änderbar, Bild ersetzen per Foto oder Datei. Schalter „Zum Zusammenlegen“.
+   vorgefüllt und Titel, Text, Preis, Händler direkt änderbar. Kein eigenes Hochladen von Bildern (Lukas, 20.11.2026:
+   „link muss reichen oder halt kein bild“). Bild und Titel einer Wunschkarte führen per Klick direkt zum Shop.
+   Schalter „Zum Zusammenlegen“.
 8. **Gäste.** Namen anlegen, umbenennen, je Liste an- und abwählen, „Reservierungen freigeben“.
 9. **Aufdecken.** Ab dem Tag nach dem Anlass: wer was geschenkt hat, je Gast.
 10. **Export.** Eine Datei (ZIP mit JSON und Bildern).

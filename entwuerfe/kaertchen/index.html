@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Freundebuch · Kärtchen</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<!-- Navigation: am Handy schwebende Leiste unten (＋ in der Mitte), am PC ruhige Spalte links (Festhalten oben).
+     Festhalten steht im DOM zuerst, damit die Tab-Reihenfolge am PC der sichtbaren entspricht. Kein Logo, kein App-Name. -->
+<nav class="nav" aria-label="Hauptnavigation">
+  <button class="nav-ziel nav-plus" type="button" data-festhalten aria-keyshortcuts="N">
+    <span class="plus-kreis" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 7v18M7 16h18"/></svg></span>
+    <span>Festhalten</span><kbd aria-hidden="true">N</kbd>
+  </button>
+  <a class="nav-ziel" href="#start" data-ziel="start">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 15.5 16 6l11 9.5"/><path d="M8.5 13.5V25c0 .8.6 1.4 1.4 1.4h12.2c.8 0 1.4-.6 1.4-1.4V13.5"/><path d="M13.5 26.2v-6.4c0-1.2 1-2.2 2.5-2.2s2.5 1 2.5 2.2v6.4"/></svg>
+    <span>Start</span>
+  </a>
+  <a class="nav-ziel" href="#menschen" data-ziel="menschen">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11.5" cy="11" r="4.5"/><path d="M3.5 26c.6-5 3.8-7.8 8-7.8s7.4 2.8 8 7.8"/><circle cx="22" cy="12.5" r="3.6"/><path d="M20.5 19.2c4.6-.6 7.4 1.8 8 6.3"/></svg>
+    <span>Menschen</span>
+  </a>
+  <a class="nav-ziel" href="#suche" data-ziel="suche" aria-keyshortcuts="/">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="14" cy="14" r="8"/><path d="m20 20 6.5 6.5"/></svg>
+    <span>Suche</span><kbd aria-hidden="true">/</kbd>
+  </a>
+  <a class="nav-ziel" href="#person/ich" data-ziel="ich">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4.5c6.5 0 11.5 4.6 11.5 11.2 0 6.8-5 11.8-11.7 11.8C9.3 27.5 4.5 22.6 4.5 16 4.5 9.4 9.7 4.5 16 4.5z"/><path d="M11.5 18.5c2.4 2.6 6.6 2.6 9 0"/><path d="M12 12.5v1M20 12.5v1"/></svg>
+    <span>Ich</span>
+  </a>
+</nav>
+
+<main id="haupt" tabindex="-1"></main>
+
+<!-- Festhalten: ein Schritt, von überall. Am Handy Blatt von unten, am PC Fenster. -->
+<dialog id="festhalten" aria-labelledby="fh-titel">
+  <form id="fh-form" novalidate>
+    <span class="griff" aria-hidden="true"></span>
+    <div class="fh-kopf">
+      <h2 id="fh-titel">Festhalten</h2>
+      <button type="button" class="rund" data-schliessen aria-label="Schließen">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M9 9l14 14M23 9 9 23"/></svg>
+      </button>
+    </div>
+    <fieldset class="fh-wer">
+      <legend class="mini">Über wen</legend>
+      <div class="fh-personen" id="fh-personen"></div>
+    </fieldset>
+    <label class="mini" for="fh-text">Was</label>
+    <textarea id="fh-text" rows="3" placeholder="Ein Satz …" enterkeyhint="done"></textarea>
+    <fieldset class="fh-arten">
+      <legend class="mini">Art</legend>
+      <div class="fh-art-gitter" id="fh-arten"></div>
+    </fieldset>
+    <button type="submit" class="knopf haupt breit" id="fh-speichern">Speichern</button>
+  </form>
+</dialog>
+
+<!-- Kleine Auswahl, um die Art eines Eintrags zu ändern. -->
+<div id="art-wahl" class="art-wahl" popover aria-label="Art wählen"></div>
+
+<div id="meldung" class="meldung" role="status" aria-live="polite"></div>
+</body>
+</html>

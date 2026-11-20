@@ -1,0 +1,768 @@
+/* Entwurf „Kärtchen“: kräftig, greifbar, verspielt.
+ * Dicke, sehr runde Karten in Pastell (jede Art ihre Farbe), Sticker mit dickem Rand, Blob statt Foto.
+ * Farben nur als Tokens. Hell: Pastellflächen mit dicker Kante. Dunkel: eigene Fassung, kein abgedunkeltes Pastell
+ * (das würde Oliv, Senf, Braun): pflaumige Grundfläche, Karten fast neutral dunkel, Farbe kommt über eine kräftige
+ * Kante in der Pastellfarbe und über die Zeichen. */
+
+:root {
+  --grund: #f4ecf0;
+  --grund-2: #ebdfe7;
+  --papier: #fff9f3;
+  --tinte: #2c1a29;
+  --tinte-2: #5c4457;
+  --rand: #2c1a29;
+  --rand-schatten: #2c1a29;
+  --akzent: #774a9c;
+  --akzent-tief: #4f2c6e;
+  --auf-akzent: #fff9f3;
+  --akzent-hell: #e3cff2;
+  --fokus: #5b2a86;
+  --leiste: #2c1a29;
+  --leiste-text: #fbeff6;
+  --leiste-leise: #d2bfcd;
+  --leiste-an: #4d3549;
+  --karte-text: #2c1a29;
+  --karte-leise: #5a4255;
+  --tiefe: 0 18px 30px -22px rgba(60, 20, 50, 0.55);
+  --linie: #e2d3dd;
+  /* Dunkel bekommen Karten einen farbigen Ring; hell nicht. */
+  --ring: 0px;
+
+  /* Kartenfarben: Fläche / Tiefe (Füllung kleiner Pillen und der Zeichen) / Kante (dicke Unterkante, Ring) /
+   * Tinte (Strich der Zeichen). Hell sind Tiefe und Kante gleich. */
+  --pfirsich: #fbd5bc; --pfirsich-tief: #edae87; --pfirsich-kante: #edae87; --pfirsich-tinte: #7a3b16;
+  --salbei: #d3e4c8;   --salbei-tief: #a9c79a;   --salbei-kante: #a9c79a;   --salbei-tinte: #35532a;
+  --butter: #f7e7a4;   --butter-tief: #e1c766;   --butter-kante: #e1c766;   --butter-tinte: #5f4c08;
+  --rose: #f7cfd8;     --rose-tief: #e6a7b7;     --rose-kante: #e6a7b7;     --rose-tinte: #7e2a44;
+  --flieder: #e2d0f2;  --flieder-tief: #c2a3de;  --flieder-kante: #c2a3de;  --flieder-tinte: #5b3283;
+  --sand: #eadfc9;     --sand-tief: #cdbb97;     --sand-kante: #cdbb97;     --sand-tinte: #5e4a25;
+  --pistazie: #e3e8b4; --pistazie-tief: #c3cb7e; --pistazie-kante: #c3cb7e; --pistazie-tinte: #4c5214;
+  --kreide: #eee6ea;   --kreide-tief: #d2c4cc;   --kreide-kante: #d2c4cc;   --kreide-tinte: #4f3e4a;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #1c121c;
+    --grund-2: #3a293b;
+    --papier: #2b1d2b;
+    --tinte: #fbeff4;
+    --tinte-2: #d9c6d3;
+    --rand: #cdb3c6;
+    --rand-schatten: #0b050a;
+    --akzent: #d3aef0;
+    --akzent-tief: #8b63b0;
+    --auf-akzent: #1c121c;
+    --akzent-hell: #48305f;
+    --fokus: #f2deff;
+    --leiste: #0f080e;
+    --leiste-text: #fbeff6;
+    --leiste-leise: #cbb7c6;
+    --leiste-an: #352234;
+    --karte-text: #fff4f8;
+    --karte-leise: #e6d4df;
+    --tiefe: 0 18px 30px -20px rgba(0, 0, 0, 0.85);
+    --linie: #352535;
+    --ring: 2px;
+
+    /* Fläche kaum getönt, Tiefe etwas heller, Kante und Zeichen in der klaren Pastellfarbe. */
+    --pfirsich: #3e2b34; --pfirsich-tief: #583f47; --pfirsich-kante: #ffb990; --pfirsich-tinte: #ffb990;
+    --salbei: #362d35;   --salbei-tief: #4b4448;   --salbei-kante: #a8d49a;   --salbei-tinte: #a8d49a;
+    --butter: #3d2e32;   --butter-tief: #564444;   --butter-kante: #f2d97c;   --butter-tinte: #f2d97c;
+    --rose: #3d2938;     --rose-tief: #563c4e;     --rose-kante: #f6a5bd;     --rose-tinte: #f6a5bd;
+    --flieder: #3a293d;  --flieder-tief: #503d56;  --flieder-kante: #cfa6f2;  --flieder-tinte: #cfa6f2;
+    --sand: #3c2d36;     --sand-tief: #54424a;     --sand-kante: #e4cba3;     --sand-tinte: #e4cba3;
+    --pistazie: #3a2e33; --pistazie-tief: #514545; --pistazie-kante: #d0dc86; --pistazie-tinte: #d0dc86;
+    --kreide: #3a2b39;   --kreide-tief: #503f4f;   --kreide-kante: #cdb9c8;   --kreide-tinte: #cdb9c8;
+
+    color-scheme: dark;
+  }
+}
+
+/* Farbklassen setzen die vier Kartenwerte. */
+.f-pfirsich { --k: var(--pfirsich); --k-tief: var(--pfirsich-tief); --k-kante: var(--pfirsich-kante); --k-tinte: var(--pfirsich-tinte); }
+.f-salbei   { --k: var(--salbei);   --k-tief: var(--salbei-tief);   --k-kante: var(--salbei-kante);   --k-tinte: var(--salbei-tinte); }
+.f-butter   { --k: var(--butter);   --k-tief: var(--butter-tief);   --k-kante: var(--butter-kante);   --k-tinte: var(--butter-tinte); }
+.f-rose     { --k: var(--rose);     --k-tief: var(--rose-tief);     --k-kante: var(--rose-kante);     --k-tinte: var(--rose-tinte); }
+.f-flieder  { --k: var(--flieder);  --k-tief: var(--flieder-tief);  --k-kante: var(--flieder-kante);  --k-tinte: var(--flieder-tinte); }
+.f-sand     { --k: var(--sand);     --k-tief: var(--sand-tief);     --k-kante: var(--sand-kante);     --k-tinte: var(--sand-tinte); }
+.f-pistazie { --k: var(--pistazie); --k-tief: var(--pistazie-tief); --k-kante: var(--pistazie-kante); --k-tinte: var(--pistazie-tinte); }
+.f-kreide   { --k: var(--kreide);   --k-tief: var(--kreide-tief);   --k-kante: var(--kreide-kante);   --k-tinte: var(--kreide-tinte); }
+
+/* ---------- Grundlagen ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--grund);
+  color: var(--tinte);
+  font-family: 'Bricolage Grotesque', ui-rounded, system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.45;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+h1, h2, h3 { margin: 0; font-weight: 800; letter-spacing: -0.025em; line-height: 1.05; }
+p { margin: 0; }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+svg { display: block; }
+.vh { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:focus-visible { outline: 3px solid var(--fokus); outline-offset: 3px; }
+main:focus { outline: none; }
+
+main {
+  padding: 22px 16px calc(132px + env(safe-area-inset-bottom));
+  min-height: 100dvh;
+}
+body.ohne-nav main { padding-bottom: 48px; }
+
+.mini { display: block; font-size: 14px; font-weight: 700; color: var(--tinte-2); letter-spacing: 0.01em; margin: 0 0 8px; }
+.abschnitt { font-size: 26px; display: flex; align-items: baseline; gap: 10px; }
+.abschnitt .zahl { font-size: 16px; font-weight: 700; color: var(--tinte-2); letter-spacing: 0; }
+.leise { color: var(--karte-leise); }
+.leer { padding: 22px 4px; color: var(--tinte-2); font-weight: 600; }
+.seiten-titel { font-size: 48px; letter-spacing: -0.035em; margin: 6px 0 22px; }
+
+.pfeil { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Teller: Untergrund für die kleinen Produktzeichnungen */
+.teller { display: grid; place-items: center; flex: none; width: 72px; height: 72px; border-radius: 22px; background: var(--papier); color: var(--k-tinte); --fuell: var(--k); }
+.teller svg { width: 82%; height: 82%; }
+.teller.klein { width: 48px; height: 48px; border-radius: 16px; }
+
+/* ---------- Blob mit Anfangsbuchstabe ---------- */
+.blob { position: relative; display: inline-grid; place-items: center; flex: none; }
+.blob svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--k); }
+.blob b { position: relative; font-weight: 800; line-height: 1; color: var(--k-tinte); letter-spacing: -0.04em; }
+.blob-xl { width: 118px; height: 118px; } .blob-xl b { font-size: 62px; }
+.blob-l  { width: 84px; height: 84px; }   .blob-l b  { font-size: 44px; }
+.blob-m  { width: 50px; height: 50px; }   .blob-m b  { font-size: 27px; }
+.blob-s  { width: 38px; height: 38px; }   .blob-s b  { font-size: 20px; }
+/* In einer Karte derselben Farbe trägt der Blob die tiefere Farbe. */
+:is(.blickfang, .mensch, .treffer-mensch, .fh-person, .wer-name) .blob svg { fill: var(--k-tief); }
+@media (prefers-color-scheme: dark) {
+  /* Dunkel: der Blob ist ein heller Farbfleck in der Pastellfarbe, der Buchstabe dunkel darauf.
+   * Die Fläche hinter dem Buchstaben hat dieselbe Farbe wie der Blob (unsichtbar, aber messbar). */
+  .blob svg, :is(.blickfang, .mensch, .treffer-mensch, .fh-person, .wer-name) .blob svg { fill: var(--k-kante); }
+  .blob b { color: var(--grund); background: var(--k-kante); border-radius: 10px; padding: 0 2px; }
+}
+
+/* ---------- Sticker ---------- */
+.sticker-wolke { list-style: none; margin: 0 0 22px; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 8px; }
+.sticker {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px;
+  background: var(--papier); color: var(--tinte);
+  border: 2.5px solid var(--rand); border-radius: 999px; box-shadow: 0 3px 0 var(--rand-schatten);
+  font-weight: 500; white-space: nowrap; transform: rotate(var(--r, 0deg)); text-decoration: none;
+}
+.sticker b { font-weight: 800; }
+.sticker span { color: var(--tinte-2); }
+.sticker.klein { min-height: 34px; padding: 0 12px; font-size: 15px; font-weight: 700; border-width: 2px; box-shadow: 0 2px 0 var(--rand-schatten); }
+.sticker-link { background: var(--akzent-hell); font-weight: 700; }
+.sticker-link span { font-weight: 500; }
+.sticker-link:active { transform: translateY(2px) rotate(var(--r, 0deg)); box-shadow: 0 1px 0 var(--rand-schatten); }
+
+/* ---------- Knöpfe ---------- */
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 18px; border: 0; border-radius: 999px;
+  font-size: 16px; font-weight: 700; white-space: nowrap; text-decoration: none; cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.knopf svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.knopf.haupt { background: var(--akzent); color: var(--auf-akzent); box-shadow: 0 4px 0 var(--akzent-tief); }
+.knopf.zweit { background: var(--papier); color: var(--tinte); box-shadow: inset 0 0 0 2.5px var(--rand), 0 3px 0 var(--rand-schatten); }
+.knopf.haupt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--akzent-tief); }
+.knopf.zweit:active { transform: translateY(2px); box-shadow: inset 0 0 0 2.5px var(--rand), 0 1px 0 var(--rand-schatten); }
+.knopf.breit { width: 100%; min-height: 58px; font-size: 19px; }
+.knopf.ist-voll { background: var(--tinte); color: var(--grund); box-shadow: 0 3px 0 var(--rand-schatten); }
+.text-knopf { min-height: 44px; padding: 0 8px; border: 0; background: none; color: var(--tinte-2); font-size: 15px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; white-space: nowrap; }
+.leise-knopf { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 999px; background: none; color: var(--tinte-2); font-size: 15px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.leise-knopf svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Navigation: Handy schwebende Leiste ---------- */
+.nav {
+  position: fixed; z-index: 20; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
+  display: grid; grid-template-columns: repeat(5, 1fr); align-items: end;
+  height: 72px; padding: 0 6px; border-radius: 999px; background: var(--leiste);
+  box-shadow: 0 16px 32px -14px rgba(30, 10, 25, 0.6);
+}
+body.ohne-nav .nav { display: none; }
+.nav-ziel {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  height: 60px; margin-bottom: 6px; padding: 0; border: 0; border-radius: 999px; background: none;
+  color: var(--leiste-leise); font-size: 12px; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.nav-ziel svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-ziel[aria-current] { color: var(--leiste-text); background: var(--leiste-an); }
+.nav-ziel kbd { display: none; }
+.nav [data-ziel="start"] { order: 1; }
+.nav [data-ziel="menschen"] { order: 2; }
+.nav .nav-plus { order: 3; }
+.nav [data-ziel="suche"] { order: 4; }
+.nav [data-ziel="ich"] { order: 5; }
+.nav-plus { justify-content: flex-end; padding-bottom: 6px; color: var(--leiste-text); }
+.plus-kreis {
+  display: grid; place-items: center; width: 64px; height: 64px; margin-top: -34px; margin-bottom: 2px;
+  border-radius: 50%; background: var(--akzent-hell); color: var(--tinte);
+  box-shadow: 0 0 0 5px var(--leiste); transition: transform 0.15s;
+}
+.plus-kreis svg { width: 30px; height: 30px; stroke-width: 3.2; }
+.nav-plus:active .plus-kreis { transform: scale(0.94); }
+.nav :focus-visible { outline-color: var(--akzent-hell); }
+
+/* ---------- Personenseite ---------- */
+.profil-kopf { display: flex; align-items: center; gap: 16px; margin: 0 0 20px; }
+.profil-kopf .blob { margin-left: -6px; }
+.profil-name h1 { font-size: clamp(38px, 11vw, 50px); line-height: 0.92; letter-spacing: -0.04em; }
+.kennen { margin-top: 10px; font-size: 16px; line-height: 1.35; color: var(--tinte-2); }
+.kennen .mini { margin: 0 0 2px; font-size: 13px; }
+
+.geb-karte {
+  position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; align-items: center; column-gap: 12px;
+  margin: 0 0 24px; padding: 16px 18px 18px 20px; border-radius: 28px;
+  background: var(--k); color: var(--karte-text); box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 6px 0 var(--k-kante);
+}
+.geb-zeichen { position: absolute; width: 126px; height: 126px; right: -22px; bottom: -44px; color: var(--k-tinte); --fuell: var(--k-tief); transform: rotate(-10deg); opacity: 0.9; }
+.geb-zeichen svg { width: 100%; height: 100%; }
+.geb-datum .mini { margin: 0; color: var(--karte-leise); }
+.geb-datum b { display: block; font-size: 27px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.geb-alter { grid-column: 1; font-size: 17px; font-weight: 600; }
+.geb-bald {
+  grid-column: 2; grid-row: 1 / span 2; position: relative; z-index: 1;
+  padding: 10px 16px; border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
+  font-size: 17px; font-weight: 800; white-space: nowrap; transform: rotate(-5deg); box-shadow: 0 3px 0 var(--akzent-tief);
+}
+
+/* Geschenkideen */
+.geschenke { margin: 6px 0 0; }
+.geschenke .abschnitt, .brauche .abschnitt { margin-bottom: 14px; }
+.geschenk-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.geschenk {
+  display: grid; grid-template-columns: 72px 1fr; grid-template-areas: "teller text" "teller fuss"; gap: 4px 14px; align-items: center;
+  padding: 14px 16px 14px 14px; border-radius: 26px; background: var(--k); color: var(--karte-text);
+  box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 5px 0 var(--k-kante); transform: rotate(var(--dreh, 0deg));
+}
+.geschenk.stand-verschenkt { --k: var(--kreide); --k-tief: var(--kreide-tief); --k-kante: var(--kreide-kante); --k-tinte: var(--kreide-tinte); }
+.geschenk .teller { grid-area: teller; }
+.geschenk-text { grid-area: text; min-width: 0; }
+.geschenk-text b { display: block; font-size: 17px; font-weight: 700; line-height: 1.2; }
+.geschenk-text .leise { display: block; font-size: 15px; }
+.geschenk-fuss { grid-area: fuss; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 4px; }
+.anlass { padding: 3px 10px; border-radius: 999px; background: var(--k-tief); font-size: 14px; font-weight: 700; white-space: nowrap; }
+.stand-knopf { display: inline-flex; align-items: center; min-height: 44px; margin: -6px 0; padding: 0 4px; border: 0; background: none; cursor: pointer; border-radius: 12px; }
+.stand-knopf:hover .stempel { transform: rotate(-3deg) scale(1.06); }
+.geschenk .stempel {
+  display: inline-flex; align-items: center; transition: transform 0.15s;
+  padding: 3px 10px; border-radius: 10px; border: 2.5px solid currentColor;
+  font-size: 14px; font-weight: 800; white-space: nowrap; transform: rotate(-3deg); color: var(--karte-leise);
+}
+.geschenk.stand-besorgt .stempel { color: var(--salbei-tinte); background: var(--salbei); }
+.geschenk.ist-neu { animation: rein 0.56s cubic-bezier(0.25, 0.8, 0.3, 1.2) both; }
+.geschenk-liste.in-zeitleiste { padding-top: 4px; }
+.jahr.jahr-wort { font-size: 30px; letter-spacing: -0.03em; }
+.geschenk.stand-verschenkt .stempel { color: var(--karte-leise); }
+
+/* Ich: geteilt und was ich brauche */
+.geteilt-karte {
+  position: relative; overflow: hidden; display: block; margin: 4px 0 26px; padding: 16px 20px 10px;
+  border-radius: 28px; background: var(--akzent); color: var(--auf-akzent);
+  box-shadow: 0 6px 0 var(--akzent-tief);
+}
+.geteilt-karte .mini { position: relative; color: var(--auf-akzent); margin: 0 0 2px; }
+.geteilt-listen { position: relative; list-style: none; margin: 0; padding: 0; }
+.geteilt-listen li + li { border-top: 2px solid var(--akzent-tief); }
+.geteilt-liste { display: flex; flex-direction: column; min-height: 64px; padding: 8px 0 10px; color: inherit; text-decoration: none; border-radius: 14px; }
+.geteilt-liste b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.geteilt-mehr { display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; font-weight: 600; }
+.geteilt-liste:hover .geteilt-mehr { text-decoration: underline; text-underline-offset: 3px; }
+.geteilt-karte :focus-visible { outline-color: var(--auf-akzent); }
+@media (prefers-color-scheme: dark) {
+  /* Dunkel keine helle Fläche: dunkles Flieder mit kräftiger Fliederkante wie die anderen Karten. */
+  .geteilt-karte { background: var(--akzent-hell); color: var(--tinte); box-shadow: inset 0 0 0 var(--ring) var(--akzent), 0 6px 0 var(--akzent); }
+  .geteilt-karte .mini { color: var(--tinte-2); }
+  .geteilt-listen li + li { border-top-color: #6a4c86; }
+  .geteilt-schleife { color: var(--akzent); --fuell: #5c3f78; }
+  .geteilt-karte :focus-visible { outline-color: var(--fokus); }
+}
+.geteilt-schleife { position: absolute; right: -28px; top: -30px; width: 130px; height: 130px; color: var(--auf-akzent); --fuell: var(--akzent-tief); transform: rotate(18deg); opacity: 0.9; }
+.geteilt-schleife svg, .teilen-schleife svg { width: 100%; height: 100%; }
+.brauche { margin-bottom: 8px; }
+.brauche-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.brauche-zeile { display: flex; align-items: center; gap: 12px; padding: 8px 14px 8px 8px; border-radius: 22px; background: var(--k); color: var(--karte-text); box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 4px 0 var(--k-kante); }
+.brauche-text { min-width: 0; }
+.brauche-text b { display: block; font-size: 16px; font-weight: 700; line-height: 1.2; }
+.brauche-text .leise { font-size: 14px; }
+
+/* Zeitleiste */
+.eintraege { margin-top: 34px; }
+.eintraege-kopf { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 8px; }
+.filter {
+  display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -16px 4px; padding: 6px 16px 14px; scroll-padding-inline: 16px;
+}
+.filter::-webkit-scrollbar { display: none; }
+/* Weicher Rand dort, wo noch Chips stehen: zeigt, dass die Reihe weitergeht. */
+.filter.kann-rechts { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 56px), transparent); }
+.filter.kann-links { -webkit-mask-image: linear-gradient(to right, transparent, #000 56px); mask-image: linear-gradient(to right, transparent, #000 56px); }
+.filter.kann-links.kann-rechts { -webkit-mask-image: linear-gradient(to right, transparent, #000 56px, #000 calc(100% - 56px), transparent); mask-image: linear-gradient(to right, transparent, #000 56px, #000 calc(100% - 56px), transparent); }
+.chip {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding: 0 10px 0 8px;
+  border: 2.5px solid transparent; border-radius: 999px; background: var(--k); color: var(--karte-text);
+  font-size: 16px; font-weight: 600; white-space: nowrap; cursor: pointer; transition: transform 0.15s;
+}
+.chip-alle { padding-left: 16px; background: var(--papier); }
+.chip .zahl {
+  display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 7px;
+  border-radius: 999px; background: var(--k-tief); font-size: 13px; font-weight: 700;
+}
+.chip-alle .zahl { background: var(--grund-2); }
+.chip-zeichen svg { width: 24px; height: 24px; color: var(--k-tinte); --fuell: var(--k-tief); }
+.chip[aria-pressed="true"] { border-color: var(--rand); box-shadow: 0 3px 0 var(--rand-schatten); transform: translateY(-2px) rotate(-1.5deg); font-weight: 800; }
+
+.jahr { font-size: 44px; letter-spacing: -0.04em; color: var(--tinte-2); margin: 20px 0 10px 2px; line-height: 1; }
+.stapel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 16px; }
+.eintrag {
+  position: relative; overflow: hidden; padding: 14px 18px 18px; border-radius: 28px;
+  background: var(--k); color: var(--karte-text);
+  box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 6px 0 var(--k-kante), var(--tiefe);
+  transform: rotate(var(--dreh, 0deg));
+}
+.eintrag.ohne-art { box-shadow: inset 0 0 0 2.5px var(--k-kante), 0 6px 0 var(--k-kante), var(--tiefe); }
+.eintrag-zeichen {
+  position: absolute; right: -28px; top: -26px; width: 122px; height: 122px;
+  color: var(--k-tinte); --fuell: var(--k-tief); transform: rotate(14deg); opacity: 0.85; pointer-events: none;
+}
+.eintrag-zeichen svg { width: 100%; height: 100%; }
+.platz { float: right; width: 74px; height: 70px; margin: -14px -18px 0 8px; }
+.art-knopf {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin: 0 0 6px -6px; padding: 0 10px 0 14px;
+  border: 0; border-radius: 999px; background: var(--k-tief); color: var(--karte-text);
+  font-size: 15px; font-weight: 700; white-space: nowrap; cursor: pointer;
+}
+.ohne-art .art-knopf { background: transparent; box-shadow: inset 0 0 0 2px var(--karte-leise); border: 0; color: var(--karte-leise); font-weight: 600; }
+.art-knopf .pfeil { width: 16px; height: 16px; }
+.eintrag-text { font-size: 18px; line-height: 1.4; margin: 0 0 10px; text-wrap: pretty; }
+.eintrag time { display: block; font-size: 14px; font-weight: 600; color: var(--karte-leise); }
+
+.eintrag.ist-neu { animation: rein 0.56s cubic-bezier(0.25, 0.8, 0.3, 1.2) both; }
+.eintrag.gewechselt { animation: stempeln 0.42s ease-out; }
+.eintrag.gewechselt .eintrag-zeichen { animation: zeichen-rein 0.42s ease-out; }
+.eintrag.blinkt { animation: blinkt 1.8s ease-out; }
+@keyframes rein {
+  0% { opacity: 0; transform: translateY(-22px) rotate(-5deg) scale(0.92); }
+  60% { opacity: 1; transform: translateY(3px) rotate(1deg) scale(1.01); }
+  100% { opacity: 1; transform: rotate(var(--dreh, 0deg)); }
+}
+@keyframes stempeln {
+  0% { transform: rotate(var(--dreh, 0deg)) scale(0.97); }
+  50% { transform: rotate(calc(var(--dreh, 0deg) - 1.5deg)) scale(1.015); }
+  100% { transform: rotate(var(--dreh, 0deg)); }
+}
+@keyframes zeichen-rein { from { transform: rotate(40deg) scale(0.6); opacity: 0; } }
+@keyframes blinkt {
+  0%, 55% { box-shadow: 0 0 0 4px var(--akzent), 0 6px 0 var(--k-kante); }
+  100% { box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 6px 0 var(--k-kante), var(--tiefe); }
+}
+
+/* ---------- Start ---------- */
+.heute { margin: 2px 0 14px; color: var(--tinte-2); font-weight: 600; }
+.blickfang {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 14px;
+  min-height: 330px; padding: 22px 22px 26px; border-radius: 34px;
+  background: var(--k); color: var(--karte-text); text-decoration: none;
+  box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 8px 0 var(--k-kante), var(--tiefe);
+}
+.blickfang-zeichen { position: absolute; right: -34px; top: -30px; width: 210px; height: 210px; color: var(--k-tinte); --fuell: var(--k-tief); transform: rotate(-12deg); opacity: 0.9; }
+.blickfang-zeichen svg { width: 100%; height: 100%; }
+.blickfang .blob { margin-left: -6px; }
+.blickfang-text { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.blickfang-gross { font-size: 50px; font-weight: 800; line-height: 0.92; letter-spacing: -0.045em; }
+.blickfang-wann { display: flex; flex-direction: column; font-size: 18px; line-height: 1.3; }
+.blickfang-wann b { font-weight: 800; font-size: 24px; letter-spacing: -0.02em; }
+.blickfang-fehlt { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 4px; }
+.blickfang-idee { font-size: 15px; font-weight: 600; color: var(--karte-leise); }
+.blickfang:active { transform: translateY(3px); box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 5px 0 var(--k-kante); }
+
+.start-spalten section { margin-top: 34px; }
+.start-spalten .abschnitt { margin-bottom: 6px; }
+/* Bald und Geschenk fehlt: ruhige Zeilen ohne Kästen, nur eine feine Linie dazwischen. */
+.ruhig-liste { list-style: none; margin: 0; padding: 0; }
+.ruhig-liste li + li { border-top: 2px solid var(--linie); }
+.ruhig-zeile {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
+  min-height: 72px; padding: 10px 4px; color: var(--tinte); text-decoration: none; border-radius: 18px;
+}
+.ruhig-zeile:hover .ruhig-text b { text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 2px; }
+.ruhig-text { display: flex; flex-direction: column; min-width: 0; }
+.ruhig-text b { font-size: 20px; font-weight: 800; line-height: 1.15; letter-spacing: -0.015em; }
+.ruhig-text span { font-size: 15px; color: var(--tinte-2); }
+.ruhig-wert { padding: 5px 12px; border-radius: 999px; font-size: 15px; font-weight: 800; white-space: nowrap; color: var(--tinte); background: var(--papier); }
+.ruhig-wert.offen { background: none; color: var(--tinte-2); font-weight: 700; box-shadow: inset 0 0 0 2px var(--linie); }
+.ruhig-wert.hat-idee { background: var(--butter); color: var(--butter-tinte); box-shadow: inset 0 0 0 var(--ring) var(--butter-kante); }
+
+/* ---------- Menschen ---------- */
+.menschen-liste { list-style: none; margin: 0; padding: 0; }
+.mensch {
+  position: relative; overflow: hidden; display: flex; align-items: center; gap: 14px;
+  min-height: 92px; padding: 12px 20px 22px 0; border-radius: 28px;
+  background: var(--k); color: var(--karte-text); text-decoration: none;
+  box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 6px 0 var(--k-kante), var(--tiefe); transform: rotate(var(--dreh, 0deg));
+}
+.menschen-liste li + li .mensch { margin-top: -12px; }
+.mensch .blob { margin-left: -16px; }
+.mensch-text { display: flex; flex-direction: column; min-width: 0; }
+.mensch-text b { font-size: 26px; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
+.mensch-text span { font-size: 15px; color: var(--karte-leise); }
+.mensch .pfeil { margin-left: auto; width: 22px; height: 22px; }
+
+/* ---------- Suche ---------- */
+.suchfeld { position: relative; margin: 6px 0 24px; }
+.suchfeld svg { position: absolute; left: 20px; top: 50%; width: 26px; height: 26px; transform: translateY(-50%); fill: none; stroke: var(--tinte-2); stroke-width: 2.6; stroke-linecap: round; pointer-events: none; }
+#suchfeld {
+  width: 100%; height: 64px; padding: 0 20px 0 58px; border: 2.5px solid var(--rand); border-radius: 999px;
+  background: var(--papier); color: var(--tinte); box-shadow: 0 4px 0 var(--rand-schatten);
+  font: inherit; font-size: 20px; font-weight: 500;
+}
+#suchfeld::placeholder { color: var(--tinte-2); }
+#suchfeld::-webkit-search-cancel-button { display: none; }
+.treffer section { margin-bottom: 26px; }
+.treffer .abschnitt { font-size: 22px; margin-bottom: 12px; }
+.treffer-liste { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.treffer-liste a { text-decoration: none; color: var(--karte-text); background: var(--k); border-radius: 24px; box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 5px 0 var(--k-kante); }
+.treffer-mensch, .treffer-geschenk { display: flex; align-items: center; gap: 12px; padding: 10px 16px 10px 10px; min-height: 64px; }
+.treffer-mensch b, .treffer-geschenk b { display: block; font-size: 18px; font-weight: 800; }
+.treffer-mensch .leise, .treffer-geschenk .leise { display: block; font-size: 15px; }
+.treffer-eintrag { display: block; padding: 14px 18px 16px; }
+.treffer-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin-bottom: 4px; }
+.treffer-kopf b { font-weight: 800; }
+.treffer-kopf span { font-size: 14px; color: var(--karte-leise); font-weight: 600; }
+.treffer-text { display: block; font-size: 17px; line-height: 1.4; }
+mark { background: var(--akzent); color: var(--auf-akzent); border-radius: 6px; padding: 0 3px; font-weight: 700; }
+
+/* ---------- Wunschliste ---------- */
+.wunsch-liste { list-style: none; margin: 0 0 30px; padding: 0; display: grid; gap: 22px; }
+.wunsch { perspective: 1400px; }
+.wende { position: relative; transform-style: preserve-3d; }
+.vorn, .rueck { border-radius: 28px; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.vorn {
+  position: relative; display: grid; grid-template-columns: 96px 1fr; grid-template-areas: "teller text" "zus zus" "knoepfe knoepfe";
+  gap: 14px 16px; padding: 18px; background: var(--k); color: var(--karte-text);
+  box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 6px 0 var(--k-kante), var(--tiefe);
+}
+.wunsch .teller { grid-area: teller; width: 96px; height: 96px; border-radius: 26px; text-decoration: none; transition: transform 0.15s; }
+a.teller:hover { transform: rotate(-3deg) scale(1.03); }
+.titel-link { color: inherit; text-decoration: none; border-radius: 6px; }
+.titel-link:hover { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.wunsch-text { grid-area: text; min-width: 0; }
+.wunsch-text h3 { font-size: 20px; line-height: 1.12; letter-spacing: -0.02em; margin-bottom: 4px; hyphens: auto; hyphenate-limit-chars: 10 4 7; overflow-wrap: break-word; }
+.ganz { white-space: nowrap; }
+.beschr { font-size: 15px; line-height: 1.35; color: var(--karte-leise); }
+.preis { margin-top: 6px; font-size: 15px; }
+.preis b { font-weight: 800; }
+.haendler { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; background: var(--k-tief); font-size: 14px; font-weight: 700; }
+.haendler-link { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin-top: 8px; padding: 0 14px; color: var(--karte-text); text-decoration: none; font-size: 15px; box-shadow: 0 3px 0 var(--k-kante); }
+.haendler-link:active { transform: translateY(2px); box-shadow: none; }
+.ich-liste .vorn { grid-template-areas: "teller text"; }
+.ich-liste .zusammen { grid-area: auto; grid-column: 1 / -1; }
+.zusammen {
+  grid-area: zus; display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 10px;
+  border-radius: 18px; background: var(--k-tief); font-size: 15px; line-height: 1.3;
+}
+.zusammen b { font-weight: 800; }
+.zusammen-zeichen { flex: none; width: 28px; height: 28px; color: var(--k-tinte); --fuell: var(--k); }
+.zusammen-zeichen svg { width: 100%; height: 100%; }
+.knoepfe { grid-area: knoepfe; display: flex; gap: 8px; }
+.knoepfe .knopf { flex: 1 1 auto; padding: 0 14px; }
+.knoepfe .shop { flex: 0 0 auto; }
+.knoepfe .shop .pfeil { width: 18px; height: 18px; }
+
+/* „Von dir“: Flieder, mit Schleife */
+.ist-von-dir { --k: var(--akzent-hell); --k-tief: var(--flieder-tief); --k-kante: var(--flieder-kante); --k-tinte: var(--flieder-tinte); }
+.ist-von-dir .vorn { padding-top: 26px; }
+.von-dir-marke {
+  position: absolute; z-index: 1; top: -14px; right: 18px; display: inline-flex; align-items: center; gap: 6px;
+  min-height: 34px; padding: 0 14px 0 8px; border-radius: 999px; background: var(--akzent); color: var(--auf-akzent);
+  font-size: 15px; font-weight: 800; transform: rotate(4deg); box-shadow: 0 3px 0 var(--akzent-tief); white-space: nowrap;
+}
+.von-dir-marke > span { width: 26px; height: 26px; color: var(--auf-akzent); --fuell: var(--akzent-tief); }
+.von-dir-marke svg { width: 100%; height: 100%; }
+.rueck {
+  position: absolute; inset: 0; transform: rotateY(180deg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  background: var(--akzent-hell); color: var(--karte-text); box-shadow: inset 0 0 0 var(--ring) var(--flieder-kante), 0 6px 0 var(--flieder-kante); text-align: center; padding: 16px;
+}
+.rueck-schleife { width: 96px; height: 96px; color: var(--flieder-tinte); --fuell: var(--akzent); }
+.rueck-schleife svg { width: 100%; height: 100%; }
+.rueck b { font-size: 34px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.rueck span:last-child { font-size: 16px; font-weight: 600; }
+
+/* Gast */
+.gast, .wer { max-width: 980px; margin: 0 auto; }
+.fuer { margin: 6px 0 4px; font-size: 18px; font-weight: 700; color: var(--tinte-2); }
+.fuer .mini { margin: 0; font-size: 14px; }
+.gast-kopf h1 { font-size: 50px; line-height: 0.92; letter-spacing: -0.045em; margin-bottom: 14px; }
+.gast-kopf h1:focus { outline: none; }
+.hallo { display: flex; align-items: center; gap: 10px; margin: 0 0 28px; font-weight: 700; font-size: 18px; }
+.hallo .text-knopf { margin-left: auto; }
+.von-dir .abschnitt, .gast section > .abschnitt { margin-bottom: 18px; }
+.von-dir { margin-bottom: 8px; }
+.von-dir .wunsch-liste { gap: 28px; }
+.wer h1 { font-size: 56px; letter-spacing: -0.045em; margin: 0 0 26px; }
+.wer-namen { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+.wer-name {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 86px; padding: 0 12px 0 10px;
+  border: 0; border-radius: 28px; background: var(--k); color: var(--karte-text);
+  box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 6px 0 var(--k-kante); font-size: 20px; font-weight: 800; line-height: 1.1; text-align: left;
+  transform: rotate(var(--dreh, 0deg)); cursor: pointer;
+}
+.wer-name:active { transform: translateY(3px) rotate(var(--dreh, 0deg)); box-shadow: inset 0 0 0 var(--ring) var(--k-kante), 0 3px 0 var(--k-kante); }
+.vorschau-knopf {
+  position: fixed; z-index: 20; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 6px; min-height: 48px; padding: 0 20px 0 14px;
+  border-radius: 999px; background: var(--leiste); color: var(--leiste-text); font-weight: 700; text-decoration: none; white-space: nowrap;
+  box-shadow: 0 12px 26px -12px rgba(30, 10, 25, 0.6);
+}
+.vorschau-knopf .pfeil, .zurueck-link .pfeil { transform: rotate(180deg); }
+
+/* Meine Liste */
+.liste-kopf h1 { font-size: 46px; line-height: 0.95; letter-spacing: -0.04em; margin: 6px 0 6px; }
+.liste-kopf .leise { color: var(--tinte-2); font-weight: 600; }
+.listen-wechsel { display: flex; flex-wrap: nowrap; gap: 4px; margin: 10px 0 0 -10px; overflow-x: auto; scrollbar-width: none; }
+.listen-wechsel a {
+  flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 10px; border-radius: 999px;
+  color: var(--tinte-2); font-size: 15px; font-weight: 600; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 5px; text-decoration-thickness: 2.5px; white-space: nowrap;
+}
+.listen-wechsel a:hover { color: var(--tinte); }
+.listen-wechsel a[aria-current] { color: var(--tinte); font-weight: 800; text-decoration-color: var(--akzent); }
+.zurueck-link { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin-left: -6px; padding: 0 10px 0 4px; color: var(--tinte-2); font-weight: 700; text-decoration: none; border-radius: 999px; }
+.teilen-karte {
+  position: relative; overflow: hidden; margin: 22px 0 32px; padding: 20px 20px 22px; border-radius: 30px;
+  background: var(--flieder); color: var(--karte-text); box-shadow: inset 0 0 0 var(--ring) var(--flieder-kante), 0 6px 0 var(--flieder-kante), var(--tiefe);
+  --k: var(--flieder); --k-tief: var(--flieder-tief); --k-kante: var(--flieder-kante); --k-tinte: var(--flieder-tinte);
+}
+.teilen-schleife { position: absolute; right: -34px; top: -40px; width: 150px; height: 150px; color: var(--flieder-tinte); --fuell: var(--flieder-tief); transform: rotate(16deg); opacity: 0.8; pointer-events: none; }
+.teilen-karte .knopf.haupt { position: relative; margin: 0 0 20px; min-height: 54px; padding: 0 22px; font-size: 17px; }
+.teilen-karte .mini { color: var(--karte-leise); }
+.teilen-karte .sticker-wolke { margin-bottom: 18px; }
+.gaeste .sticker.null { color: var(--tinte-2); }
+.zeilen-knopf {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 54px;
+  margin-top: 10px; padding: 0 18px; border: 0; border-radius: 18px;
+  background: var(--papier); color: var(--tinte); font-size: 17px; font-weight: 700; text-decoration: none; text-align: left; cursor: pointer;
+}
+.zeilen-knopf.aus { justify-content: flex-start; background: transparent; color: var(--karte-leise); box-shadow: inset 0 0 0 2px var(--karte-leise); cursor: not-allowed; font-weight: 600; }
+
+/* ---------- Festhalten ---------- */
+#festhalten {
+  width: 100%; max-width: 100%; max-height: 94dvh; margin: auto 0 0; padding: 0; border: 0; overflow: auto;
+  border-radius: 30px 30px 0 0; background: var(--papier); color: var(--tinte);
+  box-shadow: 0 -12px 40px -12px rgba(30, 10, 25, 0.45);
+}
+#festhalten[open] { animation: blatt-hoch 0.34s cubic-bezier(0.2, 0.8, 0.2, 1); }
+#festhalten::backdrop { background: rgba(34, 20, 32, 0.5); }
+@keyframes blatt-hoch { from { transform: translateY(60px); opacity: 0.4; } }
+#fh-form { display: flex; flex-direction: column; gap: 14px; padding: 10px 20px calc(22px + env(safe-area-inset-bottom)); }
+.griff { align-self: center; width: 46px; height: 5px; border-radius: 3px; background: var(--tinte-2); opacity: 0.45; }
+.fh-kopf { display: flex; align-items: center; justify-content: space-between; }
+.fh-kopf h2 { font-size: 32px; letter-spacing: -0.035em; }
+.rund { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: var(--grund-2); color: var(--tinte); cursor: pointer; }
+.rund svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+legend.mini { padding: 0; }
+#fh-form > label.mini { margin-bottom: -6px; }
+.fh-personen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fh-person {
+  display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 52px; padding: 0 14px 0 6px;
+  border: 2.5px solid transparent; border-radius: 999px; background: var(--k); color: var(--karte-text);
+  font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; cursor: pointer;
+}
+.fh-person span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.fh-person[aria-pressed="true"] { border-color: var(--rand); box-shadow: 0 3px 0 var(--rand-schatten); font-weight: 800; }
+.fh-suche {
+  min-width: 0; min-height: 52px; padding: 0 16px; border: 2.5px dashed var(--tinte-2); border-radius: 999px;
+  background: transparent; color: var(--tinte); font: inherit; font-size: 17px;
+}
+.fh-suche::placeholder { color: var(--tinte-2); }
+.fh-leer { display: flex; align-items: center; padding: 0 12px; color: var(--tinte-2); font-weight: 600; }
+#fh-text {
+  width: 100%; min-height: 100px; padding: 14px 16px; resize: none;
+  border: 2.5px solid var(--rand); border-radius: 22px; box-shadow: 0 3px 0 var(--rand-schatten);
+  background: var(--grund); color: var(--tinte); font: inherit; font-size: 19px; line-height: 1.35;
+}
+#fh-text::placeholder { color: var(--tinte-2); }
+#fh-speichern[aria-disabled="true"] { background: var(--grund-2); color: var(--tinte-2); box-shadow: none; cursor: not-allowed; }
+#fh-text[aria-invalid="true"] { border-color: var(--rose-tinte); }
+.fh-art-gitter { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+.fh-art {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 66px; padding: 4px;
+  border: 2.5px solid transparent; border-radius: 20px; background: var(--k); color: var(--karte-text);
+  font-size: 15px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: transform 0.15s;
+}
+.fh-art-zeichen svg { width: 30px; height: 30px; color: var(--k-tinte); --fuell: var(--k-tief); }
+.fh-art-neu { background: transparent; color: var(--tinte); border: 2px dashed var(--tinte-2); }
+.plus { font-size: 22px; font-weight: 700; line-height: 1; }
+.art-feld {
+  min-width: 0; min-height: 44px; padding: 0 14px; border: 2.5px solid var(--rand); border-radius: 18px;
+  background: var(--grund); color: var(--tinte); font: inherit; font-size: 16px; font-weight: 600;
+}
+.art-feld::placeholder { color: var(--tinte-2); font-weight: 500; }
+.art-feld-fh { min-height: 66px; border-radius: 20px; }
+.fh-art[aria-pressed="true"] { border-color: var(--rand); box-shadow: 0 3px 0 var(--rand-schatten); transform: rotate(-2.5deg) translateY(-2px); font-weight: 800; }
+
+/* ---------- Art ändern ---------- */
+.art-wahl {
+  position: fixed; inset: auto; margin: 0; width: 304px; padding: 10px;
+  border: 2.5px solid var(--rand); border-radius: 24px; background: var(--papier); color: var(--tinte);
+  box-shadow: 0 5px 0 var(--rand-schatten), 0 24px 40px -18px rgba(30, 10, 25, 0.5);
+  gap: 6px; grid-template-columns: 1fr 1fr;
+}
+.art-wahl:popover-open { display: grid; animation: auf 0.18s ease-out; }
+@keyframes auf { from { transform: translateY(-6px) scale(0.97); opacity: 0; } }
+.art-option {
+  display: flex; align-items: center; gap: 6px; min-height: 46px; padding: 0 10px 0 6px;
+  border: 2.5px solid transparent; border-radius: 16px; background: var(--k); color: var(--karte-text);
+  font-size: 15px; font-weight: 700; white-space: nowrap; cursor: pointer; text-align: left;
+}
+.art-option.ohne { padding-left: 14px; }
+.art-option.art-neu { background: transparent; color: var(--tinte); border: 2px dashed var(--tinte-2); }
+.art-option[aria-pressed="true"] { border-color: var(--rand); }
+
+/* ---------- Bestätigung ---------- */
+.meldung {
+  position: fixed; z-index: 40; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom));
+  max-width: calc(100vw - 32px); padding: 12px 22px; border-radius: 999px;
+  background: var(--tinte); color: var(--grund); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  opacity: 0; transform: translate(-50%, 14px); pointer-events: none; transition: opacity 0.25s, transform 0.25s;
+}
+.meldung.da { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.meldung.mit-link { display: flex; align-items: center; gap: 12px; padding: 4px 4px 4px 20px; }
+.meldung-link {
+  display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0 12px 0 16px; border-radius: 999px;
+  background: var(--akzent-hell); color: var(--tinte); text-decoration: none; font-weight: 800; flex: none;
+}
+.meldung :focus-visible { outline-color: var(--akzent-hell); }
+body.ohne-nav .meldung { bottom: calc(80px + env(safe-area-inset-bottom)); }
+
+/* ---------- PC ---------- */
+@media (min-width: 900px) {
+  main { margin-left: 216px; padding: 44px 32px 72px; }
+  body.ohne-nav main { margin-left: 0; padding: 48px 48px 72px; }
+
+  .nav {
+    left: 0; top: 0; bottom: 0; right: auto; width: 216px; height: auto;
+    display: flex; flex-direction: column; align-items: stretch; gap: 6px;
+    padding: 34px 14px 34px 18px; border-radius: 0; background: var(--grund); box-shadow: none;
+  }
+  .nav-ziel {
+    flex-direction: row; justify-content: flex-start; gap: 14px; height: 52px; margin: 0; padding: 0 14px 0 16px;
+    border-radius: 18px; color: var(--tinte-2); font-size: 17px;
+  }
+  .nav-ziel[aria-current] { color: var(--tinte); background: var(--papier); box-shadow: inset 0 0 0 2.5px var(--rand), 0 3px 0 var(--rand-schatten); }
+  .nav-ziel:not([aria-current]):hover { color: var(--tinte); background: var(--grund-2); }
+  .nav-ziel kbd {
+    display: inline-grid; place-items: center; margin-left: auto; min-width: 26px; height: 26px; padding: 0 6px;
+    border-radius: 8px; box-shadow: inset 0 0 0 1.5px currentColor; font: inherit; font-size: 14px; font-weight: 700;
+  }
+  .nav-plus {
+    height: 58px; margin-bottom: 20px; padding-bottom: 0; justify-content: flex-start;
+    background: var(--akzent); color: var(--auf-akzent); box-shadow: 0 4px 0 var(--akzent-tief);
+  }
+  .nav > * { order: 0 !important; }
+  .nav-plus:hover { filter: brightness(1.05); }
+  .plus-kreis { width: 26px; height: 26px; margin: 0; background: none; color: inherit; box-shadow: none; }
+  .plus-kreis svg { width: 26px; height: 26px; stroke-width: 3; }
+  .nav :focus-visible { outline-color: var(--fokus); }
+
+  .meldung { bottom: 32px; left: calc(50% + 108px); }
+  body.ohne-nav .meldung { left: 50%; bottom: 32px; }
+
+  /* Personenseite: Kopf breit, darunter Zeitleiste mit Jahren in der linken Rinne */
+  .person { max-width: 1040px; }
+  .profil {
+    display: grid; grid-template-columns: minmax(0, 1fr) 380px; column-gap: 40px; align-items: start;
+  }
+  .profil-kopf { grid-column: 1; grid-row: 1 / span 2; margin: 0 0 24px; align-items: center; }
+  .profil-kopf .blob { width: 150px; height: 150px; } .profil-kopf .blob b { font-size: 80px; }
+  .profil-name h1 { font-size: 64px; }
+  .kennen { font-size: 18px; max-width: 34ch; }
+  .geb-karte { grid-column: 2; grid-row: 1; margin-top: 8px; }
+  .profil > .mini, .profil > .sticker-wolke { grid-column: 1 / -1; }
+  .profil > .mini { margin-top: 4px; }
+  .geschenke, .geteilt-karte, .brauche { grid-column: 1 / -1; }
+  .geschenk-liste { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .geschenk-liste.in-zeitleiste { grid-template-columns: minmax(0, 1fr); padding-top: 24px; }
+  .jahr.jahr-wort { font-size: 34px; margin-top: 30px; }
+  .geschenk { align-items: start; }
+  .geteilt-karte { max-width: 460px; }
+  .brauche-liste { grid-template-columns: repeat(2, 1fr); }
+
+  .eintraege { margin-top: 40px; }
+  .filter { margin: 0 0 6px; padding: 6px 2px 14px; }
+  .chip { font-size: 15px; gap: 4px; padding: 0 6px 0 6px; }
+  .chip-alle { padding-left: 12px; }
+  .chip .zahl { min-width: 20px; height: 20px; padding: 0 5px; font-size: 12px; }
+  .chip-zeichen svg { width: 19px; height: 19px; }
+  .filter { gap: 5px; }
+  .jahr-gruppe { display: grid; grid-template-columns: 112px minmax(0, 720px); column-gap: 28px; align-items: start; }
+  .jahr { position: sticky; top: 28px; margin: 24px 0 0; text-align: right; font-size: 46px; }
+  .stapel { padding-top: 24px; }
+  .eintrag { padding: 16px 22px 30px; }
+  .platz { margin-right: -22px; }
+
+  /* Start */
+  .start { max-width: 1000px; }
+  .blickfang { flex-direction: row; align-items: center; gap: 30px; min-height: 340px; padding: 36px 40px; }
+  .blickfang .blob { width: 200px; height: 200px; } .blickfang .blob b { font-size: 108px; }
+  .blickfang-gross { font-size: 84px; }
+  .blickfang-wann { font-size: 21px; }
+  .blickfang-zeichen { width: 320px; height: 320px; top: auto; right: -50px; bottom: -80px; }
+  .blickfang-idee { max-width: none; }
+  .start-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; }
+  .start-spalten section { margin-top: 44px; }
+
+  /* Menschen */
+  .menschen { max-width: 1000px; }
+  .menschen-liste { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 22px; }
+  .menschen-liste li + li .mensch { margin-top: 0; }
+  .mensch { padding-bottom: 18px; min-height: 110px; }
+
+  /* Suche */
+  .suche { max-width: 760px; }
+
+  /* Meine Liste: links teilen, rechts die Wünsche */
+  .liste-ich { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 44px; max-width: 1040px; align-items: start; }
+  .liste-seite { position: sticky; top: 32px; }
+  .liste-ich .wunsch-liste { margin-top: 8px; }
+
+  /* Gast */
+  .gast-kopf { display: grid; grid-template-columns: 1fr auto; align-items: end; column-gap: 24px; margin-bottom: 34px; }
+  .gast-kopf .fuer { grid-column: 1; }
+  .gast-kopf h1 { grid-column: 1; font-size: 72px; margin: 0; }
+  .gast-kopf .hallo { grid-column: 2; grid-row: 1 / span 2; margin: 0; }
+  .gast .wunsch-liste { grid-template-columns: 1fr 1fr; gap: 26px 24px; align-items: start; }
+  .wer { max-width: 720px; }
+  .wer h1 { font-size: 72px; }
+  .wer-namen { grid-template-columns: repeat(3, 1fr); }
+
+  /* Festhalten als Fenster */
+  #festhalten { width: 580px; max-height: 90dvh; margin: auto; border-radius: 34px; box-shadow: 0 30px 60px -20px rgba(30, 10, 25, 0.55); }
+  #festhalten[open] { animation: fenster-auf 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  @keyframes fenster-auf { from { transform: translateY(16px) scale(0.97); opacity: 0; } }
+  .griff { display: none; }
+  #fh-form { padding: 26px 30px 30px; }
+  .fh-art-gitter { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Gewählte Chips tragen dunkel ihre eigene Farbe als Rand. */
+  :is(.chip, .fh-art, .fh-person, .art-option)[class*="f-"] { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--k-kante) 45%, transparent); }
+  :is(.chip, .fh-art, .fh-person, .art-option)[aria-pressed="true"] { border-color: var(--k-kante); box-shadow: 0 3px 0 var(--rand-schatten); }
+  .chip-alle[aria-pressed="true"] { border-color: var(--rand); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

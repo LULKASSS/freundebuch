@@ -1,0 +1,13 @@
+{
+  "name": "freundebuch",
+  "private": true,
+  "type": "module",
+  "description": "Freundebuch mit Wunschliste",
+  "author": "Lukas Rückborn",
+  "scripts": {
+    "dev": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
+  }
+}
