@@ -436,4 +436,8 @@ main { padding: 22px 16px calc(64px + env(safe-area-inset-bottom)); }
 .fehlerseite { padding-top: 8vh; max-width: 520px; }
 .fehlerseite p { margin-top: 12px; color: var(--tinte-leise); }
 
-.code-feld { font: 400 28px/1.2 var(--titel) !important; letter-spacing: .18em; text-align: center; }
+.code-feld { font: 600 26px/1.2 var(--text) !important; font-variant-numeric: tabular-nums; letter-spacing: .18em; text-align: center; }
+.code-gross { margin: 6px 0 14px; padding: 18px 10px; border-radius: 20px; background: var(--flieder-hell); border: 1px solid var(--faden); text-align: center; font: 600 40px/1 var(--text); letter-spacing: .22em; font-variant-numeric: tabular-nums; user-select: all; }
+.code-schritte { margin: 0 0 10px; padding-left: 22px; display: grid; gap: 6px; font-size: 15.5px; }
+.app-hinweis { margin-bottom: 18px; }
+.post .anmelden-form { margin-top: 6px; }

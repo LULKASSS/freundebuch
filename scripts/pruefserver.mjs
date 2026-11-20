@@ -172,6 +172,9 @@ async function attrappe(req, res, url) {
       await new Promise((r) => setTimeout(r, 700));
       return antworten(res, 200, vorschau(koerper.url));
     }
+    if (p === '/attrappe/functions/v1/koppeln') {
+      return wer(req) ? antworten(res, 200, { code: '123456' }) : antworten(res, 401, { fehler: 'anmelden' });
+    }
     if (p.startsWith('/attrappe/storage/v1/object/public/wunschbilder/')) {
       const datei = p.split('/').pop().replace(/\.\w+$/, '');
       return antworten(res, 200, foto(datei), 'image/svg+xml');

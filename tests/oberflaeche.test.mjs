@@ -195,3 +195,25 @@ test('Preise: Tausenderpunkt und Komma werden richtig gelesen, leerer Titel beko
   assert.match(await ich.page.textContent('.wunsch-liste.ich'), /ca\. 1\.299 €/);
   await ich.ctx.close();
 });
+
+test('Home-Bildschirm-App: Code auf dem angemeldeten Gerät holen und im anderen eingeben', async () => {
+  await zuruecksetzen();
+  const safari = await geraet({ angemeldet: true, ziel: `${BASIS}/#` });
+  await safari.page.waitForSelector('.seite-listen');
+  await safari.page.click('.listen-fuss [data-aktion="code-holen"]');
+  await safari.page.waitForSelector('.code-gross');
+  const code = (await safari.page.textContent('.code-gross')).trim();
+  assert.match(code, /^\d{6,10}$/);
+
+  const app = await geraet({ ziel: `${BASIS}/` });
+  await app.page.click('[data-aktion="code-eingeben"]');
+  assert.match(await app.page.textContent('.feld-fehler'), /E-Mail-Adresse/, 'ohne Adresse erst ein Hinweis');
+  await app.page.fill('#email', 'lukas@beispiel.invalid');
+  await app.page.click('[data-aktion="code-eingeben"]');
+  await app.page.waitForSelector('#code');
+  await app.page.fill('#code', code);
+  await app.page.press('#code', 'Enter');
+  await app.page.waitForSelector('.seite-listen');
+  assert.deepEqual([...safari.fehler, ...app.fehler], []);
+  await safari.ctx.close(); await app.ctx.close();
+});

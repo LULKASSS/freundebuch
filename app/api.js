@@ -129,11 +129,25 @@ export async function linkSchicken(email) {
   }
 }
 
-/* Code aus der Mail eintippen (für die App auf dem Home-Bildschirm, die den Link nicht abbekommt). */
+/* Code eintippen: aus „Code für die App“ auf einem angemeldeten Gerät (oder später aus der Mail). */
 export async function codePruefen(email, code) {
-  const t = await anfrage('/auth/v1/verify', { methode: 'POST', gast: true, daten: { type: 'email', email, token: code } });
-  if (!t?.access_token) throw new Fehler('kein Zugang', 401, 'code');
+  let t = null, fehler = null;
+  for (const type of ['email', 'magiclink']) {
+    try { t = await anfrage('/auth/v1/verify', { methode: 'POST', gast: true, daten: { type, email, token: code } }); break; }
+    catch (e) { fehler = e; if (e.code === 'netz') break; }
+  }
+  if (!t?.access_token) throw fehler || new Fehler('kein Zugang', 401, 'code');
   merken(ausToken(t));
+}
+
+/* Code für ein anderes Gerät holen (Edge Function „koppeln“, nur angemeldet). */
+export async function geraetCode() {
+  const t = await token();
+  const r = await fetch(`${SUPABASE}/functions/v1/koppeln`, {
+    method: 'POST', headers: { apikey: SCHLUESSEL, authorization: `Bearer ${t}`, 'content-type': 'application/json' }, body: '{}',
+  }).catch(() => { throw new Fehler('Keine Verbindung. Bitte gleich noch einmal.', 0, 'netz'); });
+  if (!r.ok) throw new Fehler('code', r.status);
+  return (await r.json()).code;
 }
 
 export async function abmelden() {

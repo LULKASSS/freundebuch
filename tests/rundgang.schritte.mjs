@@ -71,6 +71,12 @@ export default async (page, foto) => {
   await page.waitForSelector('.seite-listen');
   await foto('meine-listen');
 
+  await page.click('.listen-fuss [data-aktion="code-holen"]');
+  await page.waitForSelector('.code-gross');
+  await page.waitForTimeout(350);
+  await foto('code-fuer-die-app');
+  await page.keyboard.press('Escape');
+
   await page.click('[data-aktion="name"]');
   await page.waitForSelector('#anzeigename');
   await foto('name-blatt');

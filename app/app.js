@@ -279,30 +279,43 @@ async function gastHandlung(aktion, karte) {
  * ===================================================================== */
 /* Anmelden mit Code aus der Mail: Eine App auf dem Home-Bildschirm des iPhones hat ihren eigenen Speicher;
  * der Link aus der Mail öffnet aber Safari. Den Code tippt man direkt in der App ein. */
-function seiteAnmelden(gesendetAn, fehler = '') {
-  if (gesendetAn) {
-    return `<article class="seite seite-anmelden">
-      <div class="anmelden-schmuck" aria-hidden="true">${SCHMUCK.stern}</div>
-      <h1 class="seiten-titel" tabindex="-1">Schau in dein Postfach</h1>
-      <p class="anmelden-text">Der Code ist unterwegs an ${esc(gesendetAn)}. Gib ihn hier ein, dann bist du drin und bleibst es.</p>
-      <form class="anmelden-form" data-form="code" novalidate>
-        <label class="feld"><span class="feld-name">Code aus der Mail</span><input id="code" class="code-feld" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required ${fehler ? 'aria-invalid="true"' : ''}></label>
-        ${fehler ? `<p class="feld-fehler" role="alert">${esc(fehler)}</p>` : ''}
-        <button class="knopf" type="submit">Anmelden</button>
-      </form>
-      <p class="feld-unter" style="margin-top:18px">Im Browser geht auch der Link in der Mail.</p>
-      <p><button class="knopf-text" type="button" data-aktion="anmelden-zurueck">Andere Adresse oder neuer Code</button></p>
+function codeForm(fehler) {
+  return `<form class="anmelden-form" data-form="code" novalidate>
+      <label class="feld"><span class="feld-name">Code</span><input id="code" class="code-feld" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="10" required ${fehler ? 'aria-invalid="true"' : ''}></label>
+      ${fehler ? `<p class="feld-fehler" role="alert">${esc(fehler)}</p>` : ''}
+      <button class="knopf" type="submit">Anmelden</button>
+    </form>`;
+}
+
+/* art: 'gesendet' (Link ist unterwegs) oder 'code' (Code von einem angemeldeten Gerät eingeben). */
+function seiteAnmelden(adresse, fehler = '', art = 'gesendet') {
+  const kopf = (titel) => `<div class="anmelden-schmuck" aria-hidden="true">${SCHMUCK.stern}</div><h1 class="seiten-titel" tabindex="-1">${titel}</h1>`;
+  if (adresse && art === 'code') {
+    return `<article class="seite seite-anmelden">${kopf('Code eingeben')}
+      <p class="anmelden-text">Den Code zeigt dir das Freundebuch dort, wo du schon angemeldet bist (zum Beispiel in Safari nach dem Link aus der Mail): unten auf „Code für die App“.</p>
+      ${codeForm(fehler)}
+      <p style="margin-top:18px"><button class="knopf-text" type="button" data-aktion="anmelden-zurueck">Zurück</button></p>
     </article>`;
   }
-  return `<article class="seite seite-anmelden">
-    <div class="anmelden-schmuck" aria-hidden="true">${SCHMUCK.stern}</div>
-    <h1 class="seiten-titel" tabindex="-1">Anmelden</h1>
-    <p class="anmelden-text">Du bekommst einen Code per Mail. Kein Kennwort.</p>
+  if (adresse) {
+    return `<article class="seite seite-anmelden">${kopf('Schau in dein Postfach')}
+      <p class="anmelden-text">Der Link ist unterwegs an ${esc(adresse)}. Tipp ihn an, dann bist du drin und bleibst es.</p>
+      <section class="post">
+        <h2>Du nutzt die App auf dem Home-Bildschirm?</h2>
+        <p>Der Link öffnet Safari. Tipp dort unten auf „Code für die App“ und gib den Code hier ein.</p>
+        ${codeForm(fehler)}
+      </section>
+      <p style="margin-top:18px"><button class="knopf-text" type="button" data-aktion="anmelden-zurueck">Andere Adresse</button></p>
+    </article>`;
+  }
+  return `<article class="seite seite-anmelden">${kopf('Anmelden')}
+    <p class="anmelden-text">Du bekommst einen Link per Mail. Kein Kennwort.</p>
     <form class="anmelden-form" data-form="anmelden" novalidate>
       <label class="feld"><span class="feld-name">E-Mail</span><input id="email" type="email" autocomplete="email" inputmode="email" required></label>
       ${zustand.anmeldeFehler ? `<p class="feld-fehler" role="alert">${esc(zustand.anmeldeFehler)}</p>` : ''}
-      <button class="knopf" type="submit">Code schicken</button>
+      <button class="knopf" type="submit">Link schicken</button>
     </form>
+    <p style="margin-top:14px"><button class="knopf-text" type="button" data-aktion="code-eingeben">Ich habe schon einen Code</button></p>
   </article>`;
 }
 
@@ -327,7 +340,8 @@ async function anmelden(form) {
 
 async function codePruefen(form) {
   const code = $('#code', form).value.replace(/\D/g, '');
-  const nochmal = (text) => { main.innerHTML = seiteAnmelden(anmeldeAdresse, text); $('#code').focus(); };
+  const art = $('.seite-anmelden h1')?.textContent === 'Code eingeben' ? 'code' : 'gesendet';
+  const nochmal = (text) => { main.innerHTML = seiteAnmelden(anmeldeAdresse, text, art); $('#code').focus(); };
   if (code.length < 6) { nochmal('Der Code hat mindestens sechs Ziffern.'); return; }
   const knopf = $('button[type="submit"]', form);
   knopf.disabled = true;
@@ -338,7 +352,7 @@ async function codePruefen(form) {
     location.hash = '';
     zeigen();
   } catch (e) {
-    nochmal(e.code === 'netz' ? e.message : 'Der Code passt nicht oder ist abgelaufen. Schau, ob es der aus der neuesten Mail ist.');
+    nochmal(e.code === 'netz' ? e.message : 'Der Code passt nicht oder ist abgelaufen. Hol dir einen neuen.');
   }
 }
 function zeigenAnmelden(email = '') {
@@ -391,10 +405,12 @@ function seiteListen() {
       <h1 class="liste-titel" tabindex="-1">Meine Wunschlisten</h1>
       <p class="name-zeile liste-unter"><span>Deine Leute lesen: „<strong>${esc(name || '…')}</strong> wünscht sich“</span><button class="knopf-text" type="button" data-aktion="name">Ändern</button></p>
     </header>
+    ${zustand.perLink && iphoneSafari() ? `<div class="post app-hinweis"><h2>Du nutzt die App auf dem Home-Bildschirm?</h2><p>Dort bist du noch nicht angemeldet. Hol dir einen Code und gib ihn in der App ein.</p><p class="liste-handlung" style="margin-top:12px"><button class="knopf" type="button" data-aktion="code-holen">Code für die App</button></p></div>` : ''}
     ${offen.length ? `<ul class="geteilt-liste">${offen.map(listenKarte).join('')}</ul>` : `<div class="leer-karte"><span>${SCHMUCK.schleife}</span><h2>Noch keine Liste</h2><p>Leg eine Liste für einen Anlass an, zum Beispiel Weihnachten. Den Link schickst du dann an deine Leute.</p></div>`}
     <p class="liste-handlung"><button class="knopf" type="button" data-aktion="liste-neu">${ICON.plus}<span>Neue Liste</span></button></p>
     ${zu.length ? `<details class="abgeschlossen"><summary>Abgeschlossen (${zu.length})</summary><ul class="geteilt-liste">${zu.map(listenKarte).join('')}</ul></details>` : ''}
     <footer class="listen-fuss">
+      <button class="knopf-text" type="button" data-aktion="code-holen">Code für die App</button>
       <button class="knopf-text" type="button" data-aktion="export">Alles als Datei sichern</button>
       <button class="knopf-text" type="button" data-aktion="abmelden">Abmelden</button>
     </footer>
@@ -615,6 +631,28 @@ async function wunschSpeichern() {
   } catch (e) { knopf.disabled = false; fehlerZeigen(e); }
 }
 
+/* ---------- Code für ein anderes Gerät ---------- */
+const iphoneSafari = () => /iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches;
+async function codeZeigen() {
+  blattOeffnen('code', {}, `<h2 class="blatt-titel" id="blatt-titel">Code für die App</h2>${laden('Code wird geholt …')}`);
+  try {
+    const code = await api.geraetCode();
+    if (!zustand.blatt) return;
+    blattInnen(`<h2 class="blatt-titel" id="blatt-titel">Code für die App</h2>
+      <p class="code-gross" aria-label="Code ${esc(code.split('').join(' '))}">${esc(code)}</p>
+      <ol class="code-schritte">
+        <li>Öffne das Freundebuch auf dem Home-Bildschirm.</li>
+        <li>Trag deine E-Mail-Adresse ein und tipp auf „Ich habe schon einen Code“.</li>
+        <li>Gib diesen Code ein.</li>
+      </ol>
+      <p class="feld-unter">Gilt nur kurz und nur einmal.</p>
+      <div class="blatt-fuss"><button class="knopf" type="button" data-aktion="blatt-zu">Fertig</button></div>`);
+  } catch (e) {
+    if (!zustand.blatt) return;
+    blattInnen(`<h2 class="blatt-titel" id="blatt-titel">Code für die App</h2><p class="feld-fehler">${esc(e.code === 'netz' ? e.message : 'Das hat nicht geklappt. Bitte noch einmal.')}</p><div class="blatt-fuss"><button class="knopf" type="button" data-aktion="blatt-zu">Schließen</button></div>`);
+  }
+}
+
 /* ---------- Teilen, Export ---------- */
 async function teilen(L) {
   const link = gastLink(L.link_schluessel);
@@ -713,6 +751,20 @@ document.addEventListener('click', async (ev) => {
     case 'blatt-zu': blattZu(); break;
     case 'neu-laden': zustand.gast = null; zustand.geladen = false; zeigen(); break;
     case 'anmelden-zurueck': zeigenAnmelden(anmeldeAdresse); break;
+    case 'code-eingeben': {
+      const feld = $('#email'), email = feld?.value.trim() || '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        zustand.anmeldeFehler = 'Erst deine E-Mail-Adresse eintragen, dann den Code.';
+        zeigenAnmelden(email);
+        break;
+      }
+      zustand.anmeldeFehler = null;
+      anmeldeAdresse = email;
+      main.innerHTML = seiteAnmelden(email, '', 'code');
+      $('#code').focus();
+      break;
+    }
+    case 'code-holen': codeZeigen(); break;
     case 'abmelden': await api.abmelden(); Object.assign(zustand, { geladen: false, konto: null, listen: [], wuensche: [], lw: [] }); location.hash = ''; zeigen(); break;
     case 'export': exportieren(); break;
     case 'name': blattOeffnen('name', {}, nameBlatt()); break;
@@ -820,5 +872,6 @@ addEventListener('hashchange', zeigen);
 
 /* Start: Kommt jemand über den Link aus der Mail, steht die Sitzung in der Adresse. */
 const angekommen = api.sitzungAusAdresse();
+if (angekommen?.ok) zustand.perLink = true;
 if (angekommen?.fehler) zustand.anmeldeFehler = 'Der Link ist abgelaufen oder wurde schon benutzt. Lass dir einen neuen schicken.';
 zeigen();
