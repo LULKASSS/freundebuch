@@ -50,7 +50,7 @@ Zeile, die es trägt) gilt.
 
 Etappe 1 (Wunschliste, vor Weihnachten), seit 20.11.2026. Design: Entwurf C „Faden“ (abgenommen 20.11.2026); die
 anderen drei Entwürfe bleiben zum Nachschlagen in `entwuerfe/`. Danach Etappe 2 (Personenbuch), Etappe 3 (Konten für
-andere). Offen: ob „Festhalten“ so heißt (Lukas fragte, was es bedeutet; Vorschläge „Notieren“, „Merken“, „＋ Neu“).
+andere). „Festhalten“ bleibt als Wort (Lukas, 20.11.2026); auf einer Personenseite ist diese Person vorgewählt.
 
 ## Arbeitsweise
 
