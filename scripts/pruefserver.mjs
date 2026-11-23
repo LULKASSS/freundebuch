@@ -48,7 +48,7 @@ export async function aufsetzen() {
       ('bbbbbbbb-0000-4000-8000-000000000002', '${ICH}', 'Wanderrucksack 30 Liter', 'Grün oder grau, mit Regenhülle.', '${ICH}/rucksack.png', 'https://beispiel.invalid/rucksack', 'Decathlon', 59.99, '2026-11-18', false, now() - interval '4 min'),
       ('bbbbbbbb-0000-4000-8000-000000000003', '${ICH}', 'Ein gutes Kochbuch für Gemüse', '', null, 'https://beispiel.invalid/kochbuch', 'Thalia', 32, '2026-11-19', false, now() - interval '3 min'),
       ('bbbbbbbb-0000-4000-8000-000000000004', '${ICH}', 'Fahrradanhänger für Einkäufe', 'Der große, mit Deichsel für jedes Rad.', '${ICH}/anhaenger.png', 'https://beispiel.invalid/anhaenger', 'Bergfreunde', 420, '2026-11-17', true, now() - interval '2 min'),
-      ('bbbbbbbb-0000-4000-8000-000000000005', '${ICH}', 'Dicke Wollsocken', 'Größe 43, gern gestrickt.', null, null, '', 18, '2026-11-20', false, now() - interval '1 min'),
+      ('bbbbbbbb-0000-4000-8000-000000000005', '${ICH}', 'Dicke Wollsocken', 'Gern gestrickt', null, null, '', 18, '2026-11-20', false, now() - interval '1 min'),
       ('bbbbbbbb-0000-4000-8000-000000000006', '${ICH}', 'Leselampe mit Klemme', '', '${ICH}/lampe.png', 'https://beispiel.invalid/lampe', 'IKEA', 25, '2026-11-20', false, now());
     insert into public.liste_wunsch (liste_id, wunsch_id, konto_id, reihenfolge) values
       ('aaaaaaaa-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000001', '${ICH}', 1),
@@ -57,6 +57,8 @@ export async function aufsetzen() {
       ('aaaaaaaa-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000004', '${ICH}', 4),
       ('aaaaaaaa-0000-4000-8000-000000000001', 'bbbbbbbb-0000-4000-8000-000000000005', '${ICH}', 5),
       ('aaaaaaaa-0000-4000-8000-000000000002', 'bbbbbbbb-0000-4000-8000-000000000006', '${ICH}', 1);
+    update public.wunsch set menge = 2, groesse = '43' where id = 'bbbbbbbb-0000-4000-8000-000000000005';
+    update public.wunsch set groesse = 'M' where id = 'bbbbbbbb-0000-4000-8000-000000000002';
   `);
 }
 
@@ -138,10 +140,10 @@ async function rest(req, url, koerper) {
 /* Link-Vorschau: aus der Adresse ein plausibles Ergebnis, „nichts“ für Links mit „leer“. */
 function vorschau(url) {
   const u = new URL(url);
-  if (/leer|amazon/.test(u.href)) return { titel: '', beschreibung: '', preis_ca: null, haendler: u.hostname.includes('amazon') ? 'Amazon' : '', shop_url: u.href, bild_pfad: null, gefunden: false };
+  if (/leer|amazon/.test(u.href)) return { titel: '', preis_ca: null, haendler: u.hostname.includes('amazon') ? 'Amazon' : '', shop_url: u.href, bild_pfad: null, gefunden: false };
   const stueck = u.pathname.split('/').filter(Boolean).pop() || 'wunsch';
   const titel = stueck.replace(/[-_]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
-  return { titel, beschreibung: 'Aus der Vorschau gelesen.', preis_ca: 24.95, haendler: 'Beispielshop', shop_url: u.href, bild_pfad: `${ICH}/lampe.png`, gefunden: true };
+  return { titel, preis_ca: 24.95, haendler: 'Beispielshop', shop_url: u.href, bild_pfad: `${ICH}/lampe.png`, gefunden: true };
 }
 
 function antworten(res, status, daten, typ = 'application/json') {

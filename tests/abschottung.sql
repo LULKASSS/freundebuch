@@ -9,7 +9,7 @@ declare
   a uuid := gen_random_uuid();
   b uuid := gen_random_uuid();
   la uuid; la2 uuid; lb uuid;
-  wa1 uuid; wa2 uuid; wa3 uuid; wa4 uuid; wb1 uuid;
+  wa1 uuid; wa2 uuid; wa3 uuid; wa4 uuid; wa5 uuid; wb1 uuid;
   schl text; schl2 text; schlb text;
   g1 text := 'geraet-eins-' || replace(gen_random_uuid()::text, '-', '');
   g2 text := 'geraet-zwei-' || replace(gen_random_uuid()::text, '-', '');
@@ -27,7 +27,7 @@ declare
   -- Was gast_liste herausgeben darf, sonst nichts.
   erlaubt_oben text[] := array['titel', 'anlass_datum', 'besitzer', 'archiviert', 'vorschau', 'wuensche'];
   erlaubt_wunsch text[] := array['id', 'titel', 'beschreibung', 'bild_pfad', 'shop_url', 'haendler', 'preis_ca',
-                                 'preis_stand', 'zusammenlegen', 'entfernt', 'stand', 'voll', 'beteiligte', 'vornamen'];
+                                 'preis_stand', 'menge', 'groesse', 'noch', 'zusammenlegen', 'entfernt', 'stand', 'voll', 'beteiligte', 'vornamen'];
   -- Die einzigen Funktionen, die Gäste bzw. Angemeldete aufrufen dürfen.
   fuer_gaeste text[] := array['gast_liste', 'gast_reservieren', 'gast_zuruecknehmen', 'gast_voll'];
   fuer_angemeldete text[] := array['gast_liste', 'gast_reservieren', 'gast_zuruecknehmen', 'gast_voll',
@@ -85,8 +85,16 @@ begin
   insert into public.wunsch (titel, zusammenlegen, preis_ca) values ('Fahrrad', true, 600) returning id into wa2;
   insert into public.wunsch (titel) values ('Tasse') returning id into wa3;
   insert into public.wunsch (titel) values ('Schal') returning id into wa4;
+  insert into public.wunsch (titel, menge, groesse) values ('Trikot', 2, 'M') returning id into wa5;
   insert into public.liste_wunsch (liste_id, wunsch_id, reihenfolge)
-    values (la, wa1, 1), (la, wa2, 2), (la, wa3, 3), (la, wa4, 4), (la2, wa1, 1);
+    values (la, wa1, 1), (la, wa2, 2), (la, wa3, 3), (la, wa4, 4), (la2, wa1, 1), (la2, wa5, 2);
+  -- Zusammenlegen gibt es nur einmal, nicht mehrfach.
+  pruefungen := pruefungen + 1;
+  begin
+    insert into public.wunsch (titel, zusammenlegen, menge) values ('Doppelt zusammen', true, 2);
+    fehler := fehler || 'Wunsch zum Zusammenlegen mit Anzahl 2 ließ sich anlegen';
+  exception when check_violation then null;
+  end;
 
   -- Was A sehen kann, vor allen Reservierungen (für den Vergleich in Teil 6).
   select string_agg(x, '|') into vorher from (
@@ -155,6 +163,33 @@ begin
   pruefungen := pruefungen + 1;
   if exists (select 1 from jsonb_array_elements(j->'wuensche') e where e->>'titel' = 'Tasse') then
     fehler := fehler || 'Tasse nach fremdem Zurücknehmen wieder frei';
+  end if;
+
+  -- Anzahl 2: zwei Geräte bekommen je ein Stück, danach ist der Wunsch für alle anderen weg.
+  j := public.gast_reservieren(schl2, wa5, g1);
+  pruefungen := pruefungen + 1;
+  if not (j->>'ok')::boolean then fehler := fehler || 'Erstes Stück vom Trikot ließ sich nicht reservieren'; end if;
+  j := public.gast_reservieren(schl2, wa5, g1);
+  j := public.gast_liste(schl2, g3);
+  pruefungen := pruefungen + 1;
+  if (select (e->>'noch')::int from jsonb_array_elements(j->'wuensche') e where e->>'titel' = 'Trikot') is distinct from 1 then
+    fehler := fehler || format('Trikot zeigt nach einem Stück (und doppeltem Tipp) nicht „noch 1“: %s', j->'wuensche');
+  end if;
+  j := public.gast_reservieren(schl2, wa5, g2);
+  pruefungen := pruefungen + 1;
+  if not (j->>'ok')::boolean then fehler := fehler || 'Zweites Stück vom Trikot ließ sich nicht reservieren'; end if;
+  j := public.gast_reservieren(schl2, wa5, g3);
+  pruefungen := pruefungen + 1;
+  if (j->>'ok')::boolean then fehler := fehler || 'Trikot ließ sich ein drittes Mal reservieren'; end if;
+  j := public.gast_liste(schl2, g3);
+  pruefungen := pruefungen + 1;
+  if exists (select 1 from jsonb_array_elements(j->'wuensche') e where e->>'titel' = 'Trikot') then
+    fehler := fehler || 'Trikot ist nach zwei Stück für andere noch sichtbar';
+  end if;
+  j := public.gast_liste(schl2, g1);
+  pruefungen := pruefungen + 1;
+  if (select e->>'stand' from jsonb_array_elements(j->'wuensche') e where e->>'titel' = 'Trikot') is distinct from 'von_dir' then
+    fehler := fehler || 'Gast 1 sieht sein Stück vom Trikot nicht als „von dir“';
   end if;
 
   -- Falscher Schlüssel: nichts.

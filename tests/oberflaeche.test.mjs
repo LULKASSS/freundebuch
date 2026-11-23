@@ -150,13 +150,85 @@ test('Wunsch per Link anlegen, mit der Tastatur; erscheint danach beim Gast', as
   await ich.page.click('.blatt button[type="submit"]');
   await ich.page.waitForSelector('.blatt-huelle', { state: 'detached' });
   assert.match(await ich.page.textContent('.wunsch-liste.ich'), /Blaue thermoskanne/);
-  assert.match(await ich.page.textContent('.wunsch-liste.ich'), /ca\. 29,90 €/);
+  assert.match(await ich.page.textContent('.wunsch-liste.ich'), /29,90 €/);
+  assert.doesNotMatch(await ich.page.textContent('.wunsch-liste.ich'), /ca\./);
 
   const gast = await geraet();
   await gast.page.waitForSelector('.gast-wuensche');
   assert.match(await gast.page.textContent('.gast-wuensche'), /Blaue thermoskanne/);
   assert.deepEqual([...ich.fehler, ...gast.fehler], []);
   await ich.ctx.close(); await gast.ctx.close();
+});
+
+test('Anzahl: Socken zweimal, zwei Geräte bekommen je ein Paar, danach ist der Wunsch für andere weg', async () => {
+  await zuruecksetzen();
+  const a = await geraet(), b = await geraet();
+  assert.match(await a.page.textContent(`${W(5)} .wunsch-meta`), /Größe 43.*noch 2 zu haben/);
+  await a.page.click(`${W(5)} [data-aktion="schenke"]`);
+  await a.page.waitForSelector(`.von-dir ${W(5)}`);
+  assert.match(await a.page.textContent(`${W(5)} .wunsch-meta`), /1 von 2/);
+
+  await b.page.reload();
+  await b.page.waitForSelector(W(5));
+  assert.match(await b.page.textContent(`${W(5)} .wunsch-meta`), /noch 1 zu haben/);
+  await b.page.click(`${W(5)} [data-aktion="schenke"]`);
+  await b.page.waitForSelector(`.von-dir ${W(5)}`);
+
+  const c = await geraet();
+  await c.page.waitForSelector('.gast-wuensche');
+  assert.equal(await c.page.locator(W(5)).count(), 0, 'beide Paar vergeben: für andere weg');
+  assert.deepEqual([...a.fehler, ...b.fehler, ...c.fehler], []);
+  await a.ctx.close(); await b.ctx.close(); await c.ctx.close();
+});
+
+test('Wunsch bearbeiten: Größe und „Wie oft“ landen auf der Pille; Zusammenlegen setzt auf einmal', async () => {
+  await zuruecksetzen();
+  const ich = await geraet({ angemeldet: true, ziel: LISTE });
+  await ich.page.click(`${W(3)} [data-aktion="wunsch-bearbeiten"]`);
+  await ich.page.waitForSelector('#w-groesse');
+  await ich.page.fill('#w-groesse', 'L');
+  await ich.page.click('[data-aktion="menge"][data-schritt="1"]');
+  await ich.page.click('[data-aktion="menge"][data-schritt="1"]');
+  assert.equal(await ich.page.textContent('#w-menge'), '3');
+  await ich.page.check('#w-zusammen');
+  assert.equal(await ich.page.textContent('#w-menge'), '1', 'Zusammenlegen geht nur einmal');
+  await ich.page.uncheck('#w-zusammen');
+  await ich.page.click('[data-aktion="menge"][data-schritt="1"]');
+  await ich.page.click('.blatt button[type="submit"]');
+  await ich.page.waitForSelector('.blatt-huelle', { state: 'detached' });
+  assert.match(await ich.page.textContent(`${W(3)} .pille-meta`), /Größe L.*2×/);
+  assert.deepEqual(ich.fehler, []);
+  await ich.ctx.close();
+});
+
+test('Handy: „Wunsch hinzufügen“ nimmt den Link aus der Zwischenablage, ohne zweites Einfügen', async () => {
+  await zuruecksetzen();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, locale: 'de-DE', reducedMotion: 'reduce' });
+  await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASIS });
+  const page = await ctx.newPage();
+  const fehler = [];
+  page.on('pageerror', (e) => fehler.push(e.message));
+  await page.goto(`${BASIS}/`);
+  await page.evaluate(async () => {
+    localStorage.setItem('freundebuch.attrappe', 'ja');
+    localStorage.setItem('freundebuch.sitzung', JSON.stringify(await (await fetch('/attrappe/__sitzung')).json()));
+  });
+  await page.goto(LISTE);
+  await page.reload();
+  await page.waitForSelector('[data-aktion="wunsch-neu"]');
+  await page.evaluate(() => navigator.clipboard.writeText('Schau mal: https://beispiel.invalid/produkt/gruene-giesskanne'));
+  await page.tap('[data-aktion="wunsch-neu"]');
+  await page.waitForSelector('#w-titel', { timeout: 8000 });
+  assert.equal(await page.inputValue('#w-titel'), 'Gruene giesskanne');
+  assert.equal(await page.inputValue('#w-preis'), '24,95');
+  await page.keyboard.press('Escape');
+
+  /* Derselbe Link noch einmal: kein doppelter Wunsch, sondern das Feld */
+  await page.evaluate(() => navigator.clipboard.writeText('https://beispiel.invalid/muehle'));
+  await page.tap('[data-aktion="wunsch-neu"]');
+  await page.waitForSelector('#wunsch-link');
+  assert.deepEqual(fehler, []);
+  await ctx.close();
 });
 
 test('Anmelden: unbekannte Adresse bekommt „nur auf Einladung“, mit dem Code aus der Mail bin ich drin', async () => {
@@ -192,7 +264,7 @@ test('Preise: Tausenderpunkt und Komma werden richtig gelesen, leerer Titel beko
   await ich.page.fill('#w-preis', '1.299');
   await ich.page.click('.blatt button[type="submit"]');
   await ich.page.waitForSelector('.blatt-huelle', { state: 'detached' });
-  assert.match(await ich.page.textContent('.wunsch-liste.ich'), /ca\. 1\.299 €/);
+  assert.match(await ich.page.textContent('.wunsch-liste.ich'), /1\.299 €/);
   await ich.ctx.close();
 });
 

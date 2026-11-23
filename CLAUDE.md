@@ -25,6 +25,8 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
   (`entwuerfe/faden/`, Stand Commit 655a212; Lukas, 20.11.2026). Bilder ohne eigenes Hochladen: Link reicht oder kein
   Bild; Klick auf Wunschkarte führt zum Shop. Keine Gäste, kein „Wer bist du?“, kein Aufdecken (Lukas,
   20.11.2026); ich sehe nur „3 Wünsche vergeben“, beim Zusammenlegen freiwillig ein Vorname (Lukas: „Passt so“).
+  Preis direkt aus dem Shop (Variante im Link), ohne „ca.“ und ohne Stand; meine Wünsche als kleine Pille (Bild,
+  Titel, Preis, Größe, wie oft); „Wie oft“ und Größe je Wunsch; Listentitel kleiner (Lukas, 22.11.2026).
 - Nicht gewollt: Notiz-App mit Ordnern; starres Formular mit zwanzig Feldern; Lukas' strenger Linear-Look; Blau als
   Themenfarbe; KI-Baukasten-Optik; Titelbalken oben links (kein Logo, kein App-Name, kein Menüzeichen); eigene
   Push-Meldungen; Beträge rechnen beim Zusammenlegen; Kennwort oder Konto für Gäste; Registrieren ohne Einladung.

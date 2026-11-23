@@ -158,48 +158,61 @@ main { padding: 22px 16px calc(64px + env(safe-area-inset-bottom)); }
 }
 .listen-wechsel a:hover { color: var(--tinte); background: var(--flieder-hell); }
 .listen-wechsel a[aria-current] { color: var(--tinte); background: var(--flieder-hell); box-shadow: inset 0 0 0 1.5px var(--faden); }
-.liste-titel { font: 400 clamp(40px, 11vw, 64px)/1.02 var(--titel); letter-spacing: -0.015em; margin-top: 6px; }
+.liste-titel { font: 400 clamp(30px, 8vw, 48px)/1.08 var(--titel); letter-spacing: -0.015em; margin-top: 6px; }
 .liste-unter { margin-top: 8px; color: var(--tinte-leise); font-size: 15.5px; }
 .gast-fuss { margin-top: 36px; text-align: center; }
 .von-dir { margin-bottom: 34px; }
 .von-dir .abschnitt { color: var(--terra); }
-.wunsch-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.wunsch-liste { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
 .wunsch {
   position: relative;
-  display: grid; grid-template-columns: 84px 1fr; gap: 4px 16px;
-  padding: 18px;
-  background: var(--papier); border: 1px solid var(--linie); border-radius: 24px;
+  display: grid; grid-template-columns: 64px 1fr; gap: 2px 14px; align-items: center;
+  padding: 12px 14px;
+  background: var(--papier); border: 1px solid var(--linie); border-radius: 22px;
 }
 .wunsch.gleitet { z-index: 4; }
 .von-dir .wunsch { border-color: color-mix(in srgb, var(--terra) 35%, var(--linie)); }
 .wunsch-bild {
-  position: relative; display: block; width: 84px; height: 84px;
+  position: relative; display: block; width: 64px; height: 64px;
   border-radius: 44% 56% 52% 48% / 52% 44% 56% 48%;
   background: color-mix(in srgb, var(--fuell) 42%, var(--papier));
   color: var(--tinte-leise);
 }
 .wunsch-bild > svg { width: 100%; height: 100%; }
 .wunsch-text { min-width: 0; }
-.wunsch-titel { font: 400 19px/1.22 var(--titel); margin-top: 2px; hyphens: manual; overflow-wrap: break-word; }
+.wunsch-titel { font: 400 17px/1.25 var(--titel); hyphens: manual; overflow-wrap: break-word; }
 .wunsch-titel a { text-decoration: none; }
+.wunsch-titel .zusammenhalt { white-space: nowrap; }
+.wunsch-titel a svg { display: inline-block; width: 14px; height: 14px; margin-left: 5px; vertical-align: -1px; color: var(--tinte-leise); }
 .wunsch-titel a:hover { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
-.wunsch-besch { margin-top: 4px; font-size: 15px; line-height: 1.45; color: var(--tinte-leise); }
-.wunsch-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; margin-top: 8px; font-size: 13.5px; }
-.wunsch-meta > span + span::before { content: '·'; margin-right: 10px; color: var(--tinte-leise); }
-.preis { font: 400 16px/1.3 var(--titel); }
-.haendler-zeile { display: flex; align-items: center; flex-wrap: wrap; gap: 0 10px; margin-top: 2px; }
-.haendler { font-size: 13.5px; font-weight: 600; letter-spacing: 0.02em; }
-.shop {
-  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; margin-left: -2px;
-  border-radius: 999px; color: var(--flieder); white-space: nowrap;
-  font: 600 14px/1 var(--text); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px;
-}
-.shop:hover { background: var(--flieder-hell); }
-.shop svg { width: 16px; height: 16px; flex: none; }
-.zusammen { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 14px; font-weight: 600; color: var(--flieder); }
+.wunsch-besch { margin-top: 2px; font-size: 14px; line-height: 1.4; color: var(--tinte-leise); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; }
+.wunsch-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 8px; margin-top: 3px; font-size: 14px; }
+.wunsch-meta > span + span::before { content: '·'; margin-right: 8px; color: var(--tinte-leise); }
+.preis { font: 400 15.5px/1.3 var(--titel); }
+.menge { font-weight: 600; }
+.zusammen { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 14px; font-weight: 600; color: var(--flieder); }
 .zusammen svg { width: 20px; height: 20px; flex: none; }
 .voll-zeile { margin-top: 6px; font-size: 14px; font-weight: 700; color: var(--terra); }
-.wunsch-knoepfe { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; flex-wrap: nowrap; }
+.wunsch-knoepfe { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; flex-wrap: nowrap; }
+
+/* Meine Ansicht: kleine Pille je Wunsch (Bild, Titel, Preis · Größe · wie oft) */
+.pille-knopf {
+  display: flex; align-items: center; gap: 12px; width: 100%; min-height: 72px; padding: 8px 16px 8px 8px;
+  background: var(--papier); border: 1px solid var(--linie); border-radius: 40px;
+  color: var(--tinte); text-align: left; cursor: pointer; font: inherit;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.pille-knopf:hover { border-color: var(--faden); }
+.pille-knopf .wunsch-bild, .pille-knopf .wunsch-bild.foto { width: 56px; height: 56px; flex: none; border-radius: 50%; }
+.pille-knopf .wunsch-bild.foto img { padding: 5px; }
+.pille-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.pille-titel { font: 400 16px/1.25 var(--titel); overflow: hidden; overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+.pille-meta { display: flex; flex-wrap: wrap; gap: 0 8px; font-size: 14px; color: var(--tinte-leise); }
+.pille-meta .preis { color: var(--tinte); }
+.pille-meta > span + span::before { content: '·'; margin-right: 8px; }
+.pille-zeichen { flex: none; width: 20px; height: 20px; color: var(--flieder); }
+.pille-zeichen svg { width: 100%; height: 100%; }
+.wunsch-liste.ich { gap: 10px; }
 .wunsch-knoepfe .knopf { flex: 1 1 auto; }
 .wunsch-knoepfe .knopf-rand { padding: 0 16px; }
 
@@ -239,12 +252,12 @@ main { padding: 22px 16px calc(64px + env(safe-area-inset-bottom)); }
 .werkzeug-zeile.aus > svg { color: var(--tinte-leise); }
 
 @media (min-width: 700px) {
-  .wunsch { grid-template-columns: 120px 1fr 196px; gap: 0 26px; padding: 22px 24px; align-items: start; }
-  .wunsch-bild { width: 120px; height: 120px; }
-  .wunsch-titel { font-size: 22px; }
+  .wunsch { grid-template-columns: 76px 1fr 196px; gap: 0 20px; padding: 14px 18px; }
+  .wunsch-bild { width: 76px; height: 76px; }
+  .wunsch-titel { font-size: 19px; }
   .wunsch-knoepfe { grid-column: 3; grid-row: 1; flex-direction: column; align-items: stretch; margin-top: 0; }
   .wunsch-knoepfe .knopf { flex: none; }
-  .wunsch-liste.ich .wunsch { grid-template-columns: 120px 1fr; }
+  .wunsch-liste.ich { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
   .schild { top: -22px; left: -4px; }
   .liste-oben { grid-template-columns: 1fr 1fr; gap: 48px; }
   .seite-gast { max-width: 860px; }
@@ -313,14 +326,13 @@ main { padding: 22px 16px calc(64px + env(safe-area-inset-bottom)); }
  * ===================================================================== */
 
 /* ---------- Produktfoto statt Zeichnung ---------- */
-.wunsch-bild.foto { border-radius: 22px; background: var(--bild-grund); box-shadow: inset 0 0 0 1px var(--linie); }
+.wunsch-bild.foto { border-radius: 18px; background: var(--bild-grund); box-shadow: inset 0 0 0 1px var(--linie); }
 /* multiply: der weiße Grund der Produktfotos geht im Kärtchen auf */
 .wunsch-bild.foto img { display: block; width: 100%; height: 100%; object-fit: contain; padding: 6px; border-radius: inherit; mix-blend-mode: multiply; }
 .wunsch-bild.foto .schild { top: -18px; }
 .wunsch.foto-karte .schild { left: -6px; }
 .wunsch-bild:not(.foto) { --fuell: var(--ton-sand); }
 .entfernt-zeile { margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--tinte-leise); }
-.wunsch-bearbeiten { margin-top: 2px; margin-left: -6px; }
 
 /* ---------- Kopf der Seiten ---------- */
 .zurueck { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; margin-left: -6px; padding: 0 6px; color: var(--tinte-leise); font: 600 15px/1 var(--text); text-decoration: none; }
@@ -373,13 +385,17 @@ main { padding: 22px 16px calc(64px + env(safe-area-inset-bottom)); }
 .feld-unter { margin-top: 6px; font-size: 13.5px; color: var(--tinte-leise); }
 .feld-fehler { margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--terra); }
 .euro { position: relative; }
-.euro input { padding-left: 52px; }
-.euro::before { content: 'ca.'; position: absolute; left: 16px; top: 50%; translate: 0 -50%; color: var(--tinte-leise); font-size: 15px; pointer-events: none; }
+.euro input { padding-right: 36px; }
 .euro::after { content: '€'; position: absolute; right: 16px; top: 50%; translate: 0 -50%; color: var(--tinte-leise); pointer-events: none; }
 
-.link-feld { display: flex; gap: 8px; }
-.link-feld .eingabe { flex: 1; min-width: 0; }
-.link-feld .knopf-rand { flex: none; min-height: 50px; padding: 0 16px; border-radius: 16px; }
+/* Wie oft: − 1 + */
+.menge-zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.menge-zeile .feld-name { margin: 0; }
+.zaehler { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: 999px; background: var(--bg); border: 1px solid var(--linie-stark); }
+.zaehler-knopf { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--flieder); font: 600 22px/1 var(--text); cursor: pointer; }
+.zaehler-knopf:hover:not(:disabled) { background: var(--flieder-hell); }
+.zaehler-knopf:disabled { color: var(--tinte-leise); cursor: default; }
+.zaehler output { min-width: 28px; text-align: center; font: 400 19px/1 var(--titel); font-variant-numeric: tabular-nums; }
 .ohne-link { margin-top: 6px; }
 
 /* Bild im Blatt */

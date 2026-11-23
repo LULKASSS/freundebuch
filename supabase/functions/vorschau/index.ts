@@ -1,4 +1,5 @@
-// Link-Vorschau: lädt eine Shop-Seite und liest Titel, Bild, Preis, Händler (Open Graph, JSON-LD, Amazon-Seitencode).
+// Link-Vorschau: lädt eine Shop-Seite und liest Titel, Bild, Preis, Händler (Shopify, JSON-LD, Amazon-Seitencode, Open Graph).
+// Der Preis ist der der Variante im Link (z. B. ?variant=… bei Shopify), nicht der „ab“-Preis der Seite.
 // Nur für angemeldete Konten. Das Bild wird in den eigenen Speicher (Ordner „wunschbilder“) übernommen,
 // damit Karten auch dann ein Bild haben, wenn der Shop es später sperrt oder ändert.
 // Gibt die Seite nichts her (Amazon sperrt Server-Abrufe zeitweise), kommt der Titel aus der Adresse.
@@ -60,7 +61,7 @@ async function adressePruefen(roh: string): Promise<URL> {
 }
 
 // Folgt Weiterleitungen selbst, damit jede Zwischenadresse geprüft wird.
-async function holen(adresse: string, art: 'seite' | 'bild') {
+async function holen(adresse: string, art: 'seite' | 'bild' | 'json') {
   let u = await adressePruefen(adresse);
   for (let i = 0; i < 5; i++) {
     const r = await fetch(u, {
@@ -69,7 +70,8 @@ async function holen(adresse: string, art: 'seite' | 'bild') {
       headers: {
         'user-agent': BROWSER,
         'accept-language': 'de-DE,de;q=0.9,en;q=0.6',
-        accept: art === 'seite' ? 'text/html,application/xhtml+xml' : 'image/avif,image/webp,image/*,*/*;q=0.5',
+        accept: art === 'seite' ? 'text/html,application/xhtml+xml'
+          : art === 'json' ? 'application/json,text/javascript' : 'image/avif,image/webp,image/*,*/*;q=0.5',
       },
     });
     if (r.status >= 300 && r.status < 400 && r.headers.get('location')) {
@@ -130,7 +132,17 @@ function preisZahl(roh: unknown): number | null {
   return Number.isFinite(n) && n > 0 && n < 1_000_000 ? Math.round(n * 100) / 100 : null;
 }
 
-function jsonLd(html: string) {
+type Angebot = Record<string, unknown>;
+const angeboteVon = (p: Record<string, unknown>): Angebot[] => {
+  const o = p.offers as Angebot | Angebot[] | undefined;
+  if (!o) return [];
+  const liste = ([] as Angebot[]).concat(o);
+  // AggregateOffer mit Einzelangeboten darin
+  return liste.flatMap((a) => (Array.isArray(a.offers) ? (a.offers as Angebot[]) : [a]));
+};
+const angebotPreis = (a: Angebot) => preisZahl(a.price ?? (a.priceSpecification as Angebot)?.price);
+
+function jsonLd(html: string, variante: string) {
   const gefunden: Record<string, unknown>[] = [];
   for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
@@ -148,13 +160,37 @@ function jsonLd(html: string) {
   const p = gefunden[0];
   if (!p) return {};
   const bild = ([] as unknown[]).concat(p.image ?? [])[0];
-  const angebot = ([] as Record<string, unknown>[]).concat((p.offers as Record<string, unknown>) ?? [])[0] ?? {};
+  // Alle Angebote, auch die der Varianten einer ProductGroup.
+  const varianten = ([] as Record<string, unknown>[]).concat((p.hasVariant as Record<string, unknown>[]) ?? []);
+  const angebote = [...angeboteVon(p), ...varianten.flatMap((v) => angeboteVon(v).map((a) => ({ ...a, sku: a.sku ?? v.sku })))];
+  const passend = variante
+    ? angebote.find((a) => String(a.url ?? '').includes(variante) || String(a.sku ?? '') === variante || String(a['@id'] ?? '').includes(variante))
+    : undefined;
+  const einzeln = angebote.filter((a) => angebotPreis(a) != null);
+  // Variante aus dem Link, sonst ein eindeutiger Preis. Mehrere verschiedene ohne Variante: lieber keiner als ein falscher.
+  const preise = [...new Set(einzeln.map(angebotPreis))];
+  const preis = (passend && angebotPreis(passend)) ?? (preise.length === 1 ? preise[0] : null);
   return {
     titel: sauber(p.name as string),
-    beschreibung: sauber(p.description as string),
     bild: typeof bild === 'string' ? bild : (bild as Record<string, string>)?.url ?? '',
-    preis: preisZahl(angebot.price ?? angebot.lowPrice ?? (angebot.priceSpecification as Record<string, unknown>)?.price),
+    preis,
   };
+}
+
+// Shopify-Shops geben unter <Produktadresse>.js alle Varianten mit Preis in Cent heraus.
+async function shopify(ziel: URL, html: string) {
+  const variante = ziel.searchParams.get('variant') ?? '';
+  if (!/\/products\/[^/]+\/?$/.test(ziel.pathname) || !(variante || /cdn\.shopify\.com|Shopify\.theme/i.test(html))) return null;
+  try {
+    const { r } = await holen(`${ziel.origin}${ziel.pathname.replace(/\/$/, '')}.js`, 'json');
+    if (!r.ok) return null;
+    const d = JSON.parse(await textBis(r, 1_000_000));
+    const vs: { id: number; price: number; available?: boolean }[] = d.variants ?? [];
+    const v = vs.find((x) => String(x.id) === variante) ?? vs.find((x) => x.available) ?? vs[0];
+    return v && Number.isFinite(v.price) ? Math.round(v.price) / 100 : null;
+  } catch {
+    return null;
+  }
 }
 
 function amazon(html: string) {
@@ -165,8 +201,15 @@ function amazon(html: string) {
     if (dyn) try { bild = Object.keys(JSON.parse(entschluesseln(dyn)))[0] ?? ''; } catch { /* egal */ }
   }
   if (!bild) bild = html.match(/"landingImageUrl":"(https:[^"]+)"/)?.[1] ?? '';
-  const preis = preisZahl(html.match(/class=["'][^"']*priceToPay[^"']*["'][\s\S]{0,400}?<span class=["']a-offscreen["']>([^<]+)</)?.[1]
-    ?? html.match(/<span class=["']a-offscreen["']>([^<]*\d[^<]*)</)?.[1]);
+  // Der Preis, den man zahlt: Kasten „priceToPay“, darin ganze Euro und Cent (die versteckte Textzeile ist manchmal leer).
+  let preis: number | null = null;
+  for (const m of html.matchAll(/class=["'][^"']*priceToPay[^"']*["']/g)) {
+    const fenster = html.slice(m.index!, m.index! + 1500);
+    const ganz = fenster.match(/a-price-whole["']>\s*([\d.]+)/)?.[1];
+    const cent = fenster.match(/a-price-fraction["']>\s*(\d+)/)?.[1] ?? '00';
+    preis = ganz ? preisZahl(`${ganz.replace(/\./g, '')},${cent}`) : preisZahl(fenster.match(/a-offscreen["']>([^<]*\d[^<]*)</)?.[1]);
+    if (preis != null) break;
+  }
   return { titel, bild, preis };
 }
 
@@ -272,14 +315,13 @@ Deno.serve(async (req) => {
     if (r.ok && /html/i.test(r.headers.get('content-type') ?? 'text/html')) html = await textBis(r, 2_500_000);
   } catch { /* Seite gibt nichts her */ }
 
-  const ld = jsonLd(html);
+  const ld = jsonLd(html, ziel.searchParams.get('variant') ?? ziel.searchParams.get('sku') ?? '');
   const amz = /amazon\./i.test(ziel.hostname) ? amazon(html) : { titel: '', bild: '', preis: null };
   const seitenname = meta(html, 'og:site_name');
   const titelRoh = amz.titel || ld.titel || meta(html, 'og:title', 'twitter:title') ||
     sauber(html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]) || titelAusAdresse(ziel);
   const titel = kuerzen(titelRoh.replace(new RegExp(`\\s*[|–-]\\s*${seitenname || '§§'}.*$`, 'i'), '').replace(/\s*[|]\s*[^|]{2,30}$/, ''), 120);
-  const beschreibung = kuerzen(ld.beschreibung || meta(html, 'og:description', 'description', 'twitter:description'), 160);
-  const preis = amz.preis ?? ld.preis ?? preisZahl(meta(html, 'product:price:amount', 'og:price:amount', 'price'));
+  const preis = amz.preis ?? await shopify(ziel, html) ?? ld.preis ?? preisZahl(meta(html, 'product:price:amount', 'og:price:amount', 'price'));
   let bild = amz.bild || ld.bild || meta(html, 'og:image', 'og:image:url', 'twitter:image', 'image') || grossesBild(html);
   if (bild) try { bild = new URL(entschluesseln(bild), ziel).href; } catch { bild = ''; }
 
@@ -292,7 +334,6 @@ Deno.serve(async (req) => {
 
   return antwort({
     titel: titel || 'Wunsch',
-    beschreibung,
     preis_ca: preis,
     haendler: haendlerAus(ziel, seitenname),
     shop_url: shopAdresse(ziel),
@@ -300,3 +341,6 @@ Deno.serve(async (req) => {
     gefunden: Boolean(html),
   }, 200, herkunft);
 });
+
+// Für den Test der Preislesung (tests/vorschau.test.mjs).
+export { amazon, jsonLd, preisZahl };

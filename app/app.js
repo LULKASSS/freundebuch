@@ -15,8 +15,7 @@ const heute = () => new Date().toLocaleDateString('sv-SE');
 const datum = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00');
 const datumLang = (iso) => datum(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
 const datumTagMonat = (iso) => datum(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
-const standKurz = (iso) => (iso ? `Stand ${datum(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' })}` : '');
-const euro = (n) => (n == null || n === '' ? '' : `ca. ${Number(n).toLocaleString('de-DE', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} €`);
+const euro = (n) => (n == null || n === '' ? '' : `${Number(n).toLocaleString('de-DE', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} €`);
 const undListe = (a) => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} und ${a[a.length - 1]}`);
 const zahlWort = (n, eins, viele) => `${n} ${n === 1 ? eins : viele}`;
 const gastLink = (schl) => `${location.origin}${location.pathname}#l/${schl}`;
@@ -31,7 +30,6 @@ const ICON = {
   zusammen: zeichen('<path d="M9.2 7.4c2.6 0 4.6 2 4.6 4.6s-2 4.6-4.6 4.6-4.6-2-4.6-4.6 2-4.6 4.6-4.6z"/><path d="M14.8 7.4c2.6 0 4.6 2 4.6 4.6s-2 4.6-4.6 4.6"/>'),
   weiter: zeichen('<path d="M9.4 5.8 15.6 12l-6.2 6.2"/>'),
   plus: zeichen('<path d="M12.1 5.2c-.2 4.6-.1 9.1.1 13.6"/><path d="M5.3 12.2c4.5-.3 9-.2 13.5.1"/>'),
-  einfuegen: zeichen('<rect x="6" y="5.2" width="12" height="15" rx="2"/><path d="M9.5 5.2c0-1 .8-1.8 1.8-1.8h1.4c1 0 1.8.8 1.8 1.8v.8h-5z"/>'),
 };
 const FADEN_LADEN = '<svg viewBox="0 0 54 20" aria-hidden="true"><path pathLength="100" d="M2 12C10 2 16 18 26 10s16 6 26-4"/></svg>';
 const laden = (text = 'Einen Moment …') => `<p class="laden" role="status">${FADEN_LADEN}<span>${esc(text)}</span></p>`;
@@ -81,17 +79,32 @@ function bild(w, mitSchild = false) {
   return `<${tag} class="wunsch-bild${w.bild_pfad ? ' foto' : ''}" ${attr}>${innen}${mitSchild ? schild() : ''}</${tag}>`;
 }
 
+/* Eine Zeile unter dem Titel: Preis · Größe · wie oft (beim Gast: wie viele noch zu haben sind). */
+function metaZeile(w, gast = false) {
+  const teile = [];
+  if (w.preis_ca != null) teile.push(`<span class="preis">${euro(w.preis_ca)}</span>`);
+  if (w.groesse) teile.push(`<span>Größe ${esc(w.groesse)}</span>`);
+  const menge = w.menge || 1;
+  if (menge > 1) {
+    const noch = w.noch ?? menge;
+    teile.push(`<span class="menge">${!gast ? `${menge}×` : w.stand === 'von_dir' ? `1 von ${menge}` : `noch ${noch} zu haben`}</span>`);
+  }
+  if (!gast && w.zusammenlegen) teile.push(`<span class="menge">zusammen</span>`);
+  if (gast && w.haendler) teile.push(`<span class="leise">${esc(w.haendler)}</span>`);
+  return teile.join('');
+}
+
 function kartenText(w, zusatz = '') {
-  const titel = w.shop_url ? `<a ${shopAttr(w)}>${esc(w.titel)}</a>` : esc(w.titel);
-  const meta = [w.preis_ca != null ? `<span class="preis">${euro(w.preis_ca)}</span>` : '', w.preis_ca != null && w.preis_stand ? `<span class="leise">${standKurz(w.preis_stand)}</span>` : ''].filter(Boolean).join('');
-  const haendler = w.haendler || w.shop_url
-    ? `<p class="haendler-zeile">${w.haendler ? `<span class="haendler">${esc(w.haendler)}</span>` : ''}${w.shop_url ? `<a class="shop" ${shopAttr(w)} aria-label="Zum Shop${w.haendler ? ` bei ${esc(w.haendler)}` : ''}"><span>Zum Shop</span>${ICON.raus}</a>` : ''}</p>`
-    : '';
+  /* Das Shop-Zeichen bleibt beim letzten Wort, statt allein in eine neue Zeile zu rutschen. */
+  const worte = String(w.titel).split(' '), letztes = worte.pop();
+  const titel = w.shop_url
+    ? `<a ${shopAttr(w)}>${worte.length ? `${esc(worte.join(' '))} ` : ''}<span class="zusammenhalt">${esc(letztes)}${ICON.raus}</span><span class="nur-leser"> (zum Shop)</span></a>`
+    : esc(w.titel);
+  const meta = metaZeile(w, true);
   return `<div class="wunsch-text">
       <h3 class="wunsch-titel">${titel}</h3>
-      ${w.beschreibung ? `<p class="wunsch-besch">${esc(w.beschreibung)}</p>` : ''}
       ${meta ? `<p class="wunsch-meta">${meta}</p>` : ''}
-      ${haendler}
+      ${w.beschreibung ? `<p class="wunsch-besch">${esc(w.beschreibung)}</p>` : ''}
       ${zusatz}
     </div>`;
 }
@@ -139,10 +152,17 @@ function gastKarte(w, offenDabei) {
   </li>`;
 }
 
-function ichKarte(w) {
-  const zusatz = (w.zusammenlegen ? `<p class="zusammen">${ICON.zusammen}<span>Zum Zusammenlegen</span></p>` : '') +
-    `<button class="knopf-text wunsch-bearbeiten" type="button" data-aktion="wunsch-bearbeiten" data-wunsch-id="${w.id}">Bearbeiten</button>`;
-  return `<li class="wunsch" data-wunsch="${w.id}">${bild(w)}${kartenText(w, zusatz)}</li>`;
+/* Meine Ansicht: jeder Wunsch eine kleine Pille. Antippen öffnet ihn zum Bearbeiten (oder nimmt ihn auf die Liste). */
+function pille(w, aktion = 'wunsch-bearbeiten') {
+  const meta = metaZeile(w);
+  return `<li class="pille" data-wunsch="${w.id}">
+    <button class="pille-knopf" type="button" data-aktion="${aktion}" data-wunsch-id="${w.id}">
+      ${bild({ ...w, shop_url: '' })}
+      <span class="pille-text"><span class="pille-titel">${esc(w.titel)}</span>${meta ? `<span class="pille-meta">${meta}</span>` : ''}</span>
+      <span class="pille-zeichen">${aktion === 'dazunehmen' ? ICON.plus : ICON.stift}</span>
+      <span class="nur-leser">${aktion === 'dazunehmen' ? ', auf diese Liste nehmen' : ', bearbeiten'}</span>
+    </button>
+  </li>`;
 }
 
 /* =====================================================================
@@ -446,12 +466,12 @@ function seiteListe(id) {
     </div>
     <section aria-labelledby="wuensche-titel">
       <h2 class="abschnitt" id="wuensche-titel">Wünsche</h2>
-      ${ws.length ? `<ol class="wunsch-liste ich">${ws.map(ichKarte).join('')}</ol>` : `<div class="leer-karte"><span>${PRODUKT.box}</span><h2>Noch leer</h2><p>Kopier einen Link aus einem Shop und füg ihn ein. Bild, Titel und Preis holt das Freundebuch selbst.</p></div>`}
+      ${ws.length ? `<ol class="wunsch-liste ich">${ws.map((w) => pille(w)).join('')}</ol>` : `<div class="leer-karte"><span>${PRODUKT.box}</span><h2>Noch leer</h2><p>Kopier den Link aus dem Shop und tipp auf „Wunsch hinzufügen“.</p></div>`}
       <p class="liste-handlung"><button class="knopf" type="button" data-aktion="wunsch-neu">${ICON.plus}<span>Wunsch hinzufügen</span></button></p>
     </section>
     ${andere.length ? `<section class="andere" aria-labelledby="andere-titel" style="margin-top:42px">
       <h2 class="abschnitt" id="andere-titel">Aus deinen anderen Wünschen</h2>
-      <ol class="wunsch-liste ich">${andere.map((w) => `<li class="wunsch" data-wunsch="${w.id}">${bild(w)}${kartenText(w, `<button class="knopf-text wunsch-bearbeiten" type="button" data-aktion="dazunehmen" data-wunsch-id="${w.id}">Auf diese Liste</button>`)}</li>`).join('')}</ol>
+      <ol class="wunsch-liste ich">${andere.map((w) => pille(w, 'dazunehmen')).join('')}</ol>
     </section>` : ''}
   </article>`;
 }
@@ -536,15 +556,14 @@ function nameBlatt() {
 }
 
 /* ---------- Wunsch ---------- */
+/* Am Handy liest „Wunsch hinzufügen“ gleich die Zwischenablage (das Telefon fragt einmal „Einsetzen“).
+ * Liegt dort ein neuer Link, geht es direkt zum Wunsch; sonst kommt dieses Feld. */
 function wunschLinkBlatt(fehler = '') {
-  const handy = matchMedia('(pointer: coarse)').matches && navigator.clipboard?.readText;
   return `<h2 class="blatt-titel" id="blatt-titel">Wunsch hinzufügen</h2>
     <form data-form="wunsch-link" novalidate>
       <label class="feld"><span class="feld-name">Link aus dem Shop</span>
-        <span class="link-feld"><input class="eingabe" id="wunsch-link" type="url" inputmode="url" autocomplete="off" placeholder="https://…" enterkeyhint="go" ${handy ? '' : 'autofocus'}>
-        ${handy ? `<button class="knopf-rand" type="button" data-aktion="einfuegen">${ICON.einfuegen}<span>Einfügen</span></button>` : ''}</span></label>
+        <input class="eingabe" id="wunsch-link" type="url" inputmode="url" autocomplete="off" placeholder="Hier einfügen" enterkeyhint="go" autofocus></label>
       ${fehler ? `<p class="feld-fehler" role="alert">${esc(fehler)}</p>` : ''}
-      <p class="feld-unter">Bild, Titel und Preis holt das Freundebuch selbst. Alles lässt sich danach ändern.</p>
       <p class="ohne-link"><button class="knopf-text" type="button" data-aktion="ohne-link">Ohne Link weiter</button></p>
       <div class="blatt-fuss">
         <button class="knopf-rand" type="button" data-aktion="blatt-zu">Abbrechen</button>
@@ -555,20 +574,27 @@ function wunschLinkBlatt(fehler = '') {
 
 function wunschFormBlatt(w, neu) {
   const fehlt = neu && w.shop_url && !w.gefunden;
+  const menge = w.zusammenlegen ? 1 : w.menge || 1;
   return `<h2 class="blatt-titel" id="blatt-titel">${neu ? 'Wunsch hinzufügen' : 'Wunsch bearbeiten'}</h2>
     <form data-form="wunsch" novalidate>
-      ${fehlt ? '<p class="feld-unter" style="margin-top:-6px">Der Shop hat nichts verraten. Trag ein, was du weißt; ein Bild ist kein Muss.</p>' : ''}
+      ${fehlt ? '<p class="feld-unter" style="margin-top:-6px">Der Shop hat nichts verraten. Trag es selbst ein.</p>' : ''}
       <div class="blatt-bild">${bild({ ...w, shop_url: '' })}
-        ${w.bild_pfad ? '<button class="knopf-text" type="button" data-aktion="bild-weg">Ohne Bild</button>' : '<span class="feld-unter">Kein Bild. Auf der Karte steht eine kleine Zeichnung.</span>'}</div>
+        ${w.bild_pfad ? '<button class="knopf-text" type="button" data-aktion="bild-weg">Ohne Bild</button>' : ''}</div>
       <label class="feld feld-titel"><span class="feld-name">Titel</span><input id="w-titel" type="text" maxlength="120" required value="${esc(w.titel || '')}" autofocus></label>
-      <label class="feld"><span class="feld-name">Kurz dazu (freiwillig)</span><textarea id="w-besch" maxlength="400" rows="2" placeholder="Farbe, Größe, was dir wichtig ist">${esc(w.beschreibung || '')}</textarea></label>
       <div class="feld-reihe">
         <label class="feld"><span class="feld-name">Preis</span><span class="euro"><input id="w-preis" type="text" inputmode="decimal" value="${w.preis_ca != null ? esc(String(w.preis_ca).replace('.', ',')) : ''}"></span></label>
-        <label class="feld"><span class="feld-name">Händler</span><input id="w-haendler" type="text" maxlength="40" value="${esc(w.haendler || '')}"></label>
+        <label class="feld"><span class="feld-name">Größe</span><input id="w-groesse" type="text" maxlength="20" autocomplete="off" placeholder="z. B. M" value="${esc(w.groesse || '')}"></label>
       </div>
+      <div class="menge-zeile"><span class="feld-name" id="menge-name">Wie oft</span>
+        <span class="zaehler" role="group" aria-labelledby="menge-name">
+          <button class="zaehler-knopf" type="button" data-aktion="menge" data-schritt="-1" aria-label="Einmal weniger" ${menge <= 1 || w.zusammenlegen ? 'disabled' : ''}>−</button>
+          <output id="w-menge" aria-live="polite">${menge}</output>
+          <button class="zaehler-knopf" type="button" data-aktion="menge" data-schritt="1" aria-label="Einmal mehr" ${menge >= 9 || w.zusammenlegen ? 'disabled' : ''}>+</button>
+        </span></div>
+      <label class="feld"><span class="feld-name">Notiz (freiwillig)</span><input id="w-besch" type="text" maxlength="400" autocomplete="off" placeholder="z. B. Farbe" value="${esc(w.beschreibung || '')}"></label>
       <label class="feld"><span class="feld-name">Link zum Shop</span><input id="w-link" type="url" inputmode="url" autocomplete="off" value="${esc(w.shop_url || '')}" placeholder="https://…"></label>
       <label class="schalter"><input id="w-zusammen" type="checkbox" role="switch" ${w.zusammenlegen ? 'checked' : ''}>
-        <span class="schalter-text"><strong>Zum Zusammenlegen</strong><span>Für Teures: Mehrere können sich beteiligen, statt dass einer es allein schenkt.</span></span></label>
+        <span class="schalter-text"><strong>Zum Zusammenlegen</strong><span>Mehrere schenken es gemeinsam.</span></span></label>
       <p class="feld-fehler" id="w-fehler" role="alert" hidden></p>
       <div class="blatt-fuss">
         ${neu ? '' : '<span class="links"><button class="knopf-text warnung" type="button" data-aktion="wunsch-entfernen">Entfernen</button></span>'}
@@ -578,14 +604,45 @@ function wunschFormBlatt(w, neu) {
     </form>`;
 }
 
+const linkAus = (roh) => {
+  const t = String(roh || '').trim();
+  return t.match(/https?:\/\/\S+/)?.[0] || (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t) ? `https://${t}` : '');
+};
+/* Derselbe Artikel? Amazon über die Artikelnummer, sonst Adresse ohne Anhang (Shopify-Variante zählt mit). */
+const artikel = (u) => {
+  try {
+    const x = new URL(u);
+    const asin = x.pathname.match(/\/(?:dp|gp\/product|gp\/aw\/d)\/([A-Z0-9]{10})/i)?.[1];
+    if (asin) return asin.toUpperCase();
+    return `${x.hostname.replace(/^www\./, '')}${x.pathname.replace(/\/$/, '')}#${x.searchParams.get('variant') || ''}`;
+  } catch { return ''; }
+};
+const LADEN_BLATT = `<h2 class="blatt-titel" id="blatt-titel">Wunsch hinzufügen</h2>${laden('Ich schaue im Shop nach …')}`;
+const neuerWunsch = (w = {}) => ({ titel: '', beschreibung: '', preis_ca: null, haendler: '', shop_url: '', bild_pfad: null, menge: 1, groesse: '', ...w });
+
+async function wunschNeu(L) {
+  if (matchMedia('(pointer: coarse)').matches && navigator.clipboard?.readText) {
+    let url = '';
+    try { url = linkAus(await navigator.clipboard.readText()); } catch { /* nicht erlaubt oder weggetippt */ }
+    const schonDa = url && zustand.wuensche.some((w) => !w.entfernt_am && w.shop_url && artikel(w.shop_url) === artikel(url));
+    if (url && !schonDa) {
+      blattOeffnen('wunsch', { liste: L.id }, LADEN_BLATT);
+      linkPruefen(url);
+      return;
+    }
+    if (schonDa) hinweis('Den kopierten Link hast du schon als Wunsch.');
+  }
+  blattOeffnen('wunsch', { liste: L.id }, wunschLinkBlatt());
+}
+
 async function linkPruefen(roh) {
-  const url = roh.trim().match(/https?:\/\/\S+/)?.[0] || (/^[\w-]+(\.[\w-]+)+\/?\S*$/.test(roh.trim()) ? `https://${roh.trim()}` : '');
+  const url = linkAus(roh);
   if (!url) { blattInnen(wunschLinkBlatt('Das sieht nicht wie ein Link aus.')); $('#wunsch-link').value = roh; return; }
-  blattInnen(`<h2 class="blatt-titel" id="blatt-titel">Wunsch hinzufügen</h2>${laden('Ich schaue im Shop nach …')}`);
+  blattInnen(LADEN_BLATT);
   let v;
   try { v = await api.vorschau(url); } catch { v = { titel: '', shop_url: url, gefunden: false }; }
   if (!zustand.blatt) return;
-  zustand.blatt.wunsch = { titel: v.titel === 'Wunsch' ? '' : v.titel, beschreibung: v.beschreibung || '', preis_ca: v.preis_ca ?? null, haendler: v.haendler || '', shop_url: v.shop_url || url, bild_pfad: v.bild_pfad || null, gefunden: v.gefunden && Boolean(v.titel) };
+  zustand.blatt.wunsch = neuerWunsch({ titel: v.titel === 'Wunsch' ? '' : v.titel, preis_ca: v.preis_ca ?? null, haendler: v.haendler || '', shop_url: v.shop_url || url, bild_pfad: v.bild_pfad || null, gefunden: v.gefunden && Boolean(v.titel) });
   blattInnen(wunschFormBlatt(zustand.blatt.wunsch, true));
 }
 
@@ -601,6 +658,16 @@ function preisLesen(t) {
   return Number.isFinite(n) && n < 1e8 ? Math.round(n * 100) / 100 : NaN;
 }
 
+/* Händler bleibt, solange der Link beim selben Shop bleibt; bei einem neuen Shop der Name aus der Adresse. */
+const wirt = (u) => { try { return new URL(u).hostname.replace(/^www\d?\./, ''); } catch { return ''; } };
+function haendlerFuer(link, w) {
+  if (!link) return '';
+  if (w.haendler && wirt(link) === wirt(w.shop_url || '')) return w.haendler;
+  const teile = wirt(link).split('.');
+  const kern = teile.length > 2 && ['co', 'com'].includes(teile[teile.length - 2]) ? teile[teile.length - 3] : teile[teile.length - 2] || teile[0] || '';
+  return kern ? (kern[0].toUpperCase() + kern.slice(1)).slice(0, 40) : '';
+}
+
 async function wunschSpeichern() {
   const b = zustand.blatt, w = b.wunsch, neu = !w.id;
   const titel = $('#w-titel').value.trim(), preis = preisLesen($('#w-preis').value);
@@ -609,9 +676,11 @@ async function wunschSpeichern() {
   const fehler = $('#w-fehler');
   if (!titel) { $('#w-titel').setAttribute('aria-invalid', 'true'); fehler.hidden = false; fehler.textContent = 'Bitte einen Titel eintragen, damit man weiß, was es ist.'; $('#w-titel').focus(); return; }
   if (Number.isNaN(preis)) { fehler.hidden = false; fehler.textContent = 'Den Preis bitte als Zahl, z. B. 39,90.'; $('#w-preis').focus(); return; }
+  const zusammen = $('#w-zusammen').checked;
   const werte = {
-    titel, beschreibung: $('#w-besch').value.trim(), preis_ca: preis, haendler: $('#w-haendler').value.trim(),
-    shop_url: link || null, zusammenlegen: $('#w-zusammen').checked, bild_pfad: w.bild_pfad || null,
+    titel, beschreibung: $('#w-besch').value.trim(), preis_ca: preis, haendler: haendlerFuer(link, w),
+    groesse: $('#w-groesse').value.trim().slice(0, 20), menge: zusammen ? 1 : Math.min(9, Math.max(1, +$('#w-menge').textContent || 1)),
+    shop_url: link || null, zusammenlegen: zusammen, bild_pfad: w.bild_pfad || null,
     preis_stand: preis == null ? null : preis === (w.preis_ca == null ? null : Number(w.preis_ca)) && w.preis_stand ? w.preis_stand : heute(),
   };
   const knopf = $('.blatt button[type="submit"]');
@@ -789,13 +858,10 @@ document.addEventListener('click', async (ev) => {
       break;
     }
     case 'teilen': if (L) teilen(L); break;
-    case 'wunsch-neu': blattOeffnen('wunsch', { liste: L.id }, wunschLinkBlatt()); break;
-    case 'einfuegen': {
-      try { const t = await navigator.clipboard.readText(); $('#wunsch-link').value = t; if (t.trim()) linkPruefen(t); } catch { $('#wunsch-link').focus(); }
-      break;
-    }
-    case 'ohne-link': zustand.blatt.wunsch = { titel: '', beschreibung: '', preis_ca: null, haendler: '', shop_url: '', bild_pfad: null }; blattInnen(wunschFormBlatt(zustand.blatt.wunsch, true)); break;
-    case 'bild-weg': zustand.blatt.wunsch.bild_pfad = null; $('.blatt-bild').innerHTML = `${bild({ ...zustand.blatt.wunsch, shop_url: '' })}<span class="feld-unter">Kein Bild. Auf der Karte steht eine kleine Zeichnung.</span>`; break;
+    case 'wunsch-neu': wunschNeu(L); break;
+    case 'ohne-link': zustand.blatt.wunsch = neuerWunsch(); blattInnen(wunschFormBlatt(zustand.blatt.wunsch, true)); break;
+    case 'bild-weg': zustand.blatt.wunsch.bild_pfad = null; $('.blatt-bild').innerHTML = bild({ ...zustand.blatt.wunsch, shop_url: '' }); $('#w-titel').focus(); break;
+    case 'menge': mengeSetzen(+$('#w-menge').textContent + +el.dataset.schritt); break;
     case 'wunsch-bearbeiten': {
       const w = zustand.wuensche.find((x) => x.id === el.dataset.wunschId);
       blattOeffnen('wunsch', { liste: L?.id, wunsch: w }, wunschFormBlatt(w, false));
@@ -843,6 +909,22 @@ document.addEventListener('submit', async (ev) => {
     }
     default: break;
   }
+});
+
+/* Wie oft: 1 bis 9. Zum Zusammenlegen immer einmal. */
+function mengeSetzen(n) {
+  const zusammen = $('#w-zusammen')?.checked;
+  const m = zusammen ? 1 : Math.min(9, Math.max(1, n || 1));
+  $('#w-menge').textContent = m;
+  const [weniger, mehr] = $$('.zaehler-knopf');
+  const aus = [zusammen || m <= 1, zusammen || m >= 9];
+  if (aus[0] && document.activeElement === weniger) (aus[1] ? $('#w-zusammen') : mehr).focus();
+  if (aus[1] && document.activeElement === mehr) (aus[0] ? $('#w-zusammen') : weniger).focus();
+  weniger.disabled = aus[0];
+  mehr.disabled = aus[1];
+}
+document.addEventListener('change', (ev) => {
+  if (ev.target.id === 'w-zusammen') mengeSetzen(+$('#w-menge').textContent);
 });
 
 /* Eingefügter Link wird sofort geprüft. */
