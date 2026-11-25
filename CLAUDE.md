@@ -51,12 +51,12 @@ Zeile, die es trägt) gilt.
 ## Phase
 
 Etappe 1 (Wunschliste) läuft, seit 20.11.2026; die echte Liste ist in Gebrauch. Etappe 2 (Personenbuch) gebaut am
-25.11.2026 (Lukas: „mach mal allein weiter … um die wunschliste und auch das personenbuch hinzustellen“), **wartet auf
-Lukas' Abnahme**. Danach Etappe 3 (Konten für andere). Design: Entwurf C „Faden“ (abgenommen 20.11.2026); die anderen
+25.11.2026 (Lukas: „mach mal allein weiter … um die wunschliste und auch das personenbuch hinzustellen“), **abgenommen**
+(Lukas, 25.11.2026: „Ja, abgenommen“). Als Nächstes Etappe 3 (Konten für andere). Design: Entwurf C „Faden“ (abgenommen 20.11.2026); die anderen
 drei Entwürfe bleiben zum Nachschlagen in `entwuerfe/`. „Festhalten“ bleibt als Wort (Lukas, 20.11.2026); auf einer
 Personenseite ist diese Person vorgewählt.
 
-Annahmen in Etappe 2 (Lukas entscheidet): „Geschenk fehlt“ schaut 60 Tage voraus; keine Personenfotos, stattdessen der
+Annahmen in Etappe 2 (bei der Abnahme genannt, nicht einzeln bestätigt; gelten, bis Lukas etwas anderes sagt): „Geschenk fehlt“ schaut 60 Tage voraus; keine Personenfotos, stattdessen der
 gezeichnete Anhänger (folgt aus „Bilder ohne eigenes Hochladen“); neue Menschen stehen auf „schenke zum Geburtstag“;
 ein Eintrag darf nur ein Jahr haben („2014“); der Filter „Geschichte“ beginnt mit der ältesten.
 
