@@ -12,7 +12,7 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
 - Mittelpunkt: Die App handelt von Menschen. Die Personenseite ist der Kern, die Wunschliste ist eine Seite davon
   (der Teil meiner eigenen Seite, den ich teile), nicht umgekehrt. Fühlt sich an wie genau dafür gemacht, nicht wie
   eine Notiz-App mit Ordnern.
-- Wer, wann: ich (später eingeladene Freunde mit eigenem Konto) zwischendurch am Handy, wenn mir etwas über jemanden
+- Wer, wann: ich allein mit Konto (Familie und nahe Verwandte sehen nur die Listen, ohne Konto) zwischendurch am Handy, wenn mir etwas über jemanden
   einfällt oder ich ein Geschenk suche; am PC zum Pflegen und für eine Rede. Gäste öffnen meinen Link am Handy und
   suchen etwas aus, ohne Namen und ohne Konto.
 - Kernhandlungen, die schnell bleiben müssen: aussuchen und reservieren (Gast); etwas festhalten und etwas wiederfinden
@@ -29,7 +29,8 @@ Ein Buch über die Menschen in meinem Leben und über mich selbst, mit Wunschlis
   Titel, Preis, Größe, wie oft); „Wie oft“ und Größe je Wunsch; Listentitel kleiner (Lukas, 22.11.2026).
 - Nicht gewollt: Notiz-App mit Ordnern; starres Formular mit zwanzig Feldern; Lukas' strenger Linear-Look; Blau als
   Themenfarbe; KI-Baukasten-Optik; Titelbalken oben links (kein Logo, kein App-Name, kein Menüzeichen); eigene
-  Push-Meldungen; Beträge rechnen beim Zusammenlegen; Kennwort oder Konto für Gäste; Registrieren ohne Einladung.
+  Push-Meldungen; Beträge rechnen beim Zusammenlegen; Kennwort oder Konto für Gäste; Registrieren ohne Einladung; Konten für andere (Lukas, 25.11.2026: „es reicht
+  weiterhin wenn andere da die Listen sehen können, für mich solls aber das Freundebuch werden“).
 
 ## Grundregeln
 
@@ -52,7 +53,7 @@ Zeile, die es trägt) gilt.
 
 Etappe 1 (Wunschliste) läuft, seit 20.11.2026; die echte Liste ist in Gebrauch. Etappe 2 (Personenbuch) gebaut am
 25.11.2026 (Lukas: „mach mal allein weiter … um die wunschliste und auch das personenbuch hinzustellen“), **abgenommen**
-(Lukas, 25.11.2026: „Ja, abgenommen“). Als Nächstes Etappe 3 (Konten für andere). Design: Entwurf C „Faden“ (abgenommen 20.11.2026); die anderen
+(Lukas, 25.11.2026: „Ja, abgenommen“). Etappe 3 (Konten für andere) ist gestrichen (Lukas, 25.11.2026); der Zweig `etappe-3` bleibt ungemergt liegen, in Supabase ist „Allow new users to sign up“ aus. Design: Entwurf C „Faden“ (abgenommen 20.11.2026); die anderen
 drei Entwürfe bleiben zum Nachschlagen in `entwuerfe/`. „Festhalten“ bleibt als Wort (Lukas, 20.11.2026); auf einer
 Personenseite ist diese Person vorgewählt.
 
