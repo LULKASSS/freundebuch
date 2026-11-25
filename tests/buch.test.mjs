@@ -511,3 +511,23 @@ test('Gleiche Vornamen stehen mit vollem Namen da; Unsinn als Link und Geburtsta
   assert.deepEqual(fehler, []);
   await ctx.close();
 });
+
+test('Nach dem erneuten Öffnen (erst aus dem Gerät, dann nachsehen) kommt ein neuer Eintrag sofort beim Server an', async () => {
+  await neuAnfang();
+  const { page, ctx, fehler } = await ich(MIA);
+  await page.reload();
+  await page.waitForSelector('.ausweis');
+  await page.waitForTimeout(900);
+  for (const satz of ['Erster Satz danach.', 'Zweiter Satz danach.']) {
+    await page.keyboard.press('n');
+    await page.fill('#fh-text', satz);
+    await page.keyboard.press('Enter');
+    await page.waitForSelector('.blatt-huelle', { state: 'detached' });
+  }
+  await ohneAusgang(page);
+  const zweites = await ich(MIA);
+  await zweites.page.waitForSelector('.anh-text >> text=Erster Satz danach.');
+  await zweites.page.waitForSelector('.anh-text >> text=Zweiter Satz danach.');
+  assert.deepEqual([...fehler, ...zweites.fehler], []);
+  await ctx.close(); await zweites.ctx.close();
+});

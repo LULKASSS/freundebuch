@@ -162,39 +162,44 @@ const ausgangMerken = (a) => api.speicher.schreiben(AUSGANG(), a.length ? JSON.s
 const ausgangAendern = (id, neu) => ausgangMerken(ausgang().flatMap((a) => (a.zeile.id === id ? neu(a) || [] : a)));
 const imAusgang = (id) => ausgang().some((a) => a.zeile.id === id && !a.weg);
 export const offen = () => ausgang().filter((a) => !a.weg).length;
-let laeuft = null;
+let laeuft = null, nochmal = false;
+/* Immer nur ein Durchlauf. Kommt währenddessen etwas dazu, folgt gleich der nächste. */
 export function ausgangLeeren() {
-  laeuft ??= (async () => {
-    const versucht = new Set();
-    for (;;) {
-      const a = ausgang().find((x) => !versucht.has(x.zeile.id));
-      if (!a || !api.kontoId()) break;
-      const id = a.zeile.id;
-      versucht.add(id);
-      if (a.weg && !a.unterwegs) { ausgangAendern(id, () => null); continue; }
-      ausgangAendern(id, (x) => ({ ...x, unterwegs: true }));
-      const werteVon = ({ id: _, angelegt: __, ist_ich: ___, ...w }) => w;
-      try {
-        if (a.aendern) await api.aendern(a.tabelle, `id=eq.${id}`, werteVon(a.zeile));
-        else await api.anlegen(a.tabelle, a.zeile).catch((e) => { if (e.code !== '23505') throw e; });
-        /* Inzwischen geändert oder gelöscht? Dann gleich hinterher. */
-        const jetzt = ausgang().find((x) => x.zeile.id === id);
-        ausgangAendern(id, () => null);
-        if (jetzt?.weg) await api.loeschen(a.tabelle, `id=eq.${id}`);
-        else if (jetzt && JSON.stringify(jetzt.zeile) !== JSON.stringify(a.zeile)) {
-          ausgangMerken([...ausgang(), { tabelle: a.tabelle, zeile: { id, ...werteVon(jetzt.zeile) }, aendern: true }]);
-          versucht.delete(id);
-        }
-        $(`[data-eintrag="${id}"] .wartet`)?.remove();
-      } catch (e) {
-        ausgangAendern(id, ({ unterwegs: _, ...x }) => x);
-        if (e.code === 'netz' || !api.angemeldet()) break;
-        hinweis('Ein Eintrag ließ sich nicht sichern. Er liegt noch in diesem Gerät.');
-      }
-    }
-    laeuft = null;
+  if (laeuft) { nochmal = true; return laeuft; }
+  laeuft = (async () => {
+    try { do { nochmal = false; } while ((await durchlauf()) && nochmal); } finally { laeuft = null; }
   })();
   return laeuft;
+}
+/* false: kein Netz oder nicht mehr angemeldet, später weiter. */
+async function durchlauf() {
+  const versucht = new Set();
+  for (;;) {
+    const a = ausgang().find((x) => !versucht.has(x.zeile.id));
+    if (!a || !api.kontoId()) return true;
+    const id = a.zeile.id;
+    versucht.add(id);
+    if (a.weg && !a.unterwegs) { ausgangAendern(id, () => null); continue; }
+    ausgangAendern(id, (x) => ({ ...x, unterwegs: true }));
+    const werteVon = ({ id: _, angelegt: __, ist_ich: ___, ...w }) => w;
+    try {
+      if (a.aendern) await api.aendern(a.tabelle, `id=eq.${id}`, werteVon(a.zeile));
+      else await api.anlegen(a.tabelle, a.zeile).catch((e) => { if (e.code !== '23505') throw e; });
+      /* Inzwischen geändert oder gelöscht? Dann gleich hinterher. */
+      const jetzt = ausgang().find((x) => x.zeile.id === id);
+      ausgangAendern(id, () => null);
+      if (jetzt?.weg) await api.loeschen(a.tabelle, `id=eq.${id}`);
+      else if (jetzt && JSON.stringify(jetzt.zeile) !== JSON.stringify(a.zeile)) {
+        ausgangMerken([...ausgang(), { tabelle: a.tabelle, zeile: { id, ...werteVon(jetzt.zeile) }, aendern: true }]);
+        versucht.delete(id);
+      }
+      $(`[data-eintrag="${id}"] .wartet`)?.remove();
+    } catch (e) {
+      ausgangAendern(id, ({ unterwegs: _, ...x }) => x);
+      if (e.code === 'netz' || !api.angemeldet()) return false;
+      hinweis('Ein Eintrag ließ sich nicht sichern. Er liegt noch in diesem Gerät.');
+    }
+  }
 }
 addEventListener('online', () => { if (api.angemeldet()) ausgangLeeren(); });
 
