@@ -57,3 +57,10 @@ test('Abschottung merkt einen Reservierungsstand am Wunsch', async () => {
   const meldung = await db.exec(await lies('tests/abschottung.sql')).then(() => '', (e) => e.message);
   assert.match(meldung, /ändert sich durch Reservierungen/);
 });
+
+test('Abschottung merkt, wenn das Personenbuch für andere Konten lesbar wäre', async () => {
+  const db = await datenbank();
+  await db.exec('create policy leck on public.eintrag for select to authenticated using (true);');
+  const meldung = await db.exec(await lies('tests/abschottung.sql')).then(() => '', (e) => e.message);
+  assert.match(meldung, /Konto B liest .* aus eintrag/);
+});

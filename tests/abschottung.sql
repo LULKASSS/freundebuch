@@ -24,6 +24,9 @@ declare
   nachher text;
   fehler text[] := '{}';
   pruefungen integer := 0;
+  pa uuid; pa2 uuid; pb uuid; arta uuid; artb uuid; ea uuid; abo text; ich_a uuid;
+  privat text := 'GEHEIM-' || replace(gen_random_uuid()::text, '-', '');
+  buch text[] := array['person', 'steckbrief', 'beziehung', 'art', 'eintrag', 'geschenk', 'kalender_abo'];
   -- Was gast_liste herausgeben darf, sonst nichts.
   erlaubt_oben text[] := array['titel', 'anlass_datum', 'besitzer', 'archiviert', 'vorschau', 'wuensche'];
   erlaubt_wunsch text[] := array['id', 'titel', 'beschreibung', 'bild_pfad', 'shop_url', 'haendler', 'preis_ca',
@@ -96,6 +99,41 @@ begin
   exception when check_violation then null;
   end;
 
+  -- Personenbuch von A: in jeder Tabelle eine Zeile, jede mit einem geheimen Wort.
+  select id into ich_a from public.person where ist_ich;
+  pruefungen := pruefungen + 1;
+  if ich_a is null then fehler := fehler || 'Neues Konto hat keine eigene Seite'; end if;
+  insert into public.person (name, kennen_woher, geburtstag_tag, geburtstag_monat, geburtsjahr) values ('Mia ' || privat, privat, 29, 2, 1992) returning id into pa;
+  insert into public.person (name) values ('Tom ' || privat) returning id into pa2;
+  insert into public.steckbrief (person_id, bezeichnung, wert) values (pa, 'Schuhe', privat);
+  insert into public.beziehung (person_id, andere_person_id, name, art) values (pa, pa2, privat, 'Partner');
+  insert into public.art (name) values ('Zitat') returning id into arta;
+  insert into public.eintrag (person_id, art_id, text) values (pa, arta, privat) returning id into ea;
+  insert into public.geschenk (person_id, titel, notiz) values (pa, privat, privat);
+  insert into public.kalender_abo (konto_id) values (a) returning schluessel into abo;
+  pruefungen := pruefungen + 1;
+  begin
+    insert into public.kalender_abo (konto_id, schluessel) values (a, 'selbstgewaehlt');
+    fehler := fehler || 'Kalender-Schlüssel lässt sich selbst wählen';
+  exception when insufficient_privilege then null;
+  end;
+  pruefungen := pruefungen + 1;
+  begin
+    insert into public.person (name, ist_ich) values ('Zweites Ich', true);
+    fehler := fehler || 'Zweite eigene Seite ließ sich anlegen';
+  exception when insufficient_privilege or unique_violation then null;
+  end;
+  pruefungen := pruefungen + 1;
+  delete from public.person where id = ich_a;
+  get diagnostics n = row_count;
+  if n > 0 then fehler := fehler || 'Die eigene Seite ließ sich löschen'; end if;
+  -- Jede Tabelle des Buchs hat wirklich eine Zeile von A, sonst prüfen die Teile 4 und 5 ins Leere.
+  foreach k in array buch loop
+    pruefungen := pruefungen + 1;
+    execute format('select count(*) from public.%I where konto_id = %L', k, a) into n;
+    if n = 0 then fehler := fehler || format('Test hat keine Zeile in %s', k); end if;
+  end loop;
+
   -- Was A sehen kann, vor allen Reservierungen (für den Vergleich in Teil 6).
   select string_agg(x, '|') into vorher from (
     select to_jsonb(w)::text x from public.wunsch w
@@ -107,6 +145,8 @@ begin
   insert into public.liste (titel) values ('Liste B') returning id, link_schluessel into lb, schlb;
   insert into public.wunsch (titel) values ('Wunsch B') returning id into wb1;
   insert into public.liste_wunsch (liste_id, wunsch_id) values (lb, wb1);
+  insert into public.person (name) values ('Person von B') returning id into pb;
+  insert into public.art (name) values ('Art von B') returning id into artb;
 
   -- ===== 3. Gäste reservieren über den Link (ohne Anmeldung) =====
   perform set_config('role', 'anon', true);
@@ -239,6 +279,14 @@ begin
     fehler := fehler || 'gast_liste verrät Konto-, Listen-Kennung oder Schlüssel';
   end if;
   pruefungen := pruefungen + 1;
+  if j::text like '%' || privat || '%' then fehler := fehler || 'gast_liste verrät etwas aus dem Personenbuch'; end if;
+  pruefungen := pruefungen + 1;
+  begin
+    perform public.kalender_daten(abo);
+    fehler := fehler || 'Gast darf kalender_daten aufrufen';
+  exception when insufficient_privilege then null;
+  end;
+  pruefungen := pruefungen + 1;
   if j::text like '%' || encode(sha256(convert_to(g2, 'UTF8')), 'hex') || '%' then
     fehler := fehler || 'gast_liste verrät die Prüfsumme eines anderen Geräts';
   end if;
@@ -291,6 +339,35 @@ begin
     fehler := fehler || 'Konto B hängt etwas an die Liste von A';
   exception when others then null;
   end;
+  -- Personenbuch: B sieht nichts von A, schiebt nichts unter und hängt nichts an fremde Zeilen.
+  foreach k in array buch loop
+    pruefungen := pruefungen + 1;
+    execute format('select count(*) from public.%I x where x.konto_id <> %L or to_jsonb(x)::text like %L', k, b, '%' || privat || '%') into n;
+    if n > 0 then fehler := fehler || format('Konto B liest %s fremde Zeilen aus %s', n, k); end if;
+    pruefungen := pruefungen + 1;
+    begin
+      execute format('update public.%I x set konto_id = %L', k, a);
+      fehler := fehler || format('Konto B kann konto_id in %s ändern', k);
+    exception when others then null;
+    end;
+  end loop;
+  pruefungen := pruefungen + 1;
+  begin insert into public.person (konto_id, name) values (a, 'untergeschoben'); fehler := fehler || 'B legt bei A eine Person an'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin insert into public.eintrag (person_id, text) values (pa, 'x'); fehler := fehler || 'B hängt einen Eintrag an eine Person von A'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin insert into public.geschenk (person_id, titel) values (pa, 'x'); fehler := fehler || 'B hängt ein Geschenk an eine Person von A'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin insert into public.steckbrief (person_id, bezeichnung, wert) values (pa, 'x', 'x'); fehler := fehler || 'B hängt Steckbrief an eine Person von A'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin insert into public.eintrag (person_id, art_id, text) values (pb, arta, 'x'); fehler := fehler || 'B nutzt eine Art von A'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin insert into public.beziehung (person_id, andere_person_id, name) values (pb, pa, 'x'); fehler := fehler || 'B verknüpft eine Person von A'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin insert into public.kalender_abo (konto_id) values (a); fehler := fehler || 'B legt für A einen Kalender an'; exception when others then null; end;
+  pruefungen := pruefungen + 1;
+  begin perform public.kalender_daten(abo); fehler := fehler || 'Angemeldete dürfen kalender_daten aufrufen'; exception when insufficient_privilege then null; end;
+
   pruefungen := pruefungen + 1;
   if public.mein_stand(la) is not null then fehler := fehler || 'mein_stand gibt B den Stand von A'; end if;
 
@@ -361,11 +438,30 @@ begin
 
   -- ===== Ergebnis =====
   perform set_config('role', 'none', true);
+  -- Kalender: mit Schlüssel nur Name und Tag, ohne nichts.
+  pruefungen := pruefungen + 1;
+  j := public.kalender_daten(abo);
+  if jsonb_array_length(j) is distinct from 1
+     or (select array_agg(x order by x) from jsonb_object_keys(j->0) x) is distinct from array['id', 'jahr', 'monat', 'name', 'tag'] then
+    fehler := fehler || format('kalender_daten gibt anderes heraus als Name und Tag: %s', j);
+  end if;
+  pruefungen := pruefungen + 1;
+  if public.kalender_daten('falsch-' || abo) is not null then fehler := fehler || 'Kalender mit falschem Schlüssel'; end if;
+  -- Person löschen nimmt alles mit, was an ihr hängt; eine gelöschte Verknüpfung behält den Namen.
+  pruefungen := pruefungen + 1;
+  delete from public.person where id = pa2;
+  if not exists (select 1 from public.beziehung where person_id = pa and andere_person_id is null and name = privat) then
+    fehler := fehler || 'Beziehung verliert ihren Namen, wenn die verknüpfte Person gelöscht wird';
+  end if;
+  delete from public.art where id = arta;
+  if not exists (select 1 from public.eintrag where id = ea and art_id is null) then fehler := fehler || 'Eintrag verschwindet mit seiner Art'; end if;
   -- Ein ganzes Konto lässt sich samt allem löschen (Etappe 3), auch mit Reservierungen.
   pruefungen := pruefungen + 1;
   begin
     delete from auth.users where id = a;
-    if exists (select 1 from public.liste where konto_id = a) or exists (select 1 from public.reservierung where konto_id = a) then
+    if exists (select 1 from public.liste where konto_id = a) or exists (select 1 from public.reservierung where konto_id = a)
+       or exists (select 1 from public.person where konto_id = a) or exists (select 1 from public.eintrag where konto_id = a)
+       or exists (select 1 from public.geschenk where konto_id = a) or exists (select 1 from public.kalender_abo where konto_id = a) then
       fehler := fehler || 'Nach dem Löschen des Kontos bleibt etwas übrig';
     end if;
   exception when others then

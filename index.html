@@ -9,17 +9,19 @@
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex">
   <title>Freundebuch</title>
+  <script>try { const t = localStorage.getItem("freundebuch.thema"); if (t) document.documentElement.dataset.thema = t; } catch {}</script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpath fill='%23E1D1F3' stroke='%23674990' stroke-width='6' stroke-linejoin='round' d='M60 60c-14-18-38-22-38-6 0 12 22 10 38 6zM60 60c14-18 38-22 38-6 0 12-22 10-38 6z'/%3E%3Cpath fill='none' stroke='%23674990' stroke-width='6' stroke-linecap='round' d='M60 60l-14 30M60 60l14 30'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Young+Serif&display=swap">
-  <link rel="stylesheet" href="app/style.css">
+  <link rel="stylesheet" href="app/style.css?v=4">
 </head>
 <body>
   <a class="sprung" href="#inhalt">Zum Inhalt</a>
+  <nav class="leiste" aria-label="Navigation"></nav>
   <main id="inhalt" tabindex="-1"></main>
   <div id="ueber-ort"></div>
   <div class="hinweis" role="status" aria-live="polite"></div>
-  <script type="module" src="app/app.js"></script>
+  <script type="module" src="app/app.js?v=4"></script>
 </body>
 </html>

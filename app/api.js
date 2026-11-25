@@ -32,7 +32,19 @@ export function geraet() {
 /* ---------- Sitzung ---------- */
 let sitzung = null;
 try { sitzung = JSON.parse(speicher.lesen(SITZUNG) || 'null'); } catch { sitzung = null; }
-const merken = (s) => { sitzung = s; speicher.schreiben(SITZUNG, s ? JSON.stringify(s) : null); };
+/* Wird gerufen, wenn die Sitzung endet (abgelaufen oder in einem anderen Tab abgemeldet). */
+export const melden = { abgemeldet: null };
+const merken = (s) => {
+  const war = sitzung;
+  sitzung = s;
+  speicher.schreiben(SITZUNG, s ? JSON.stringify(s) : null);
+  if (war && !s) melden.abgemeldet?.();
+};
+addEventListener('storage', (e) => {
+  if (e.key !== SITZUNG || e.newValue) return;
+  sitzung = null;
+  melden.abgemeldet?.();
+});
 
 export const angemeldet = () => Boolean(sitzung?.refresh_token);
 export const kontoId = () => sitzung?.konto || null;
@@ -69,7 +81,7 @@ async function token() {
       body: JSON.stringify({ refresh_token: sitzung.refresh_token }),
     }).catch(() => null);
     if (r?.ok) merken(ausToken(await r.json()));
-    else if (r && r.status >= 400 && r.status < 500) merken(null);
+    else if (r && [400, 401, 403].includes(r.status)) merken(null); // nicht bei 429 oder Störung
     erneuern = null;
   })();
   await erneuern;
@@ -104,11 +116,14 @@ async function anfrage(pfad, { methode = 'GET', daten, kopf = {}, gast = false }
 
 /* ---------- Tabellen (nur eigene Zeilen, der Zeilenschutz sorgt dafür) ---------- */
 export const lesen = (tabelle, abfrage = '') => anfrage(`/rest/v1/${tabelle}?${abfrage}`);
+/* Zählt jedes Schreiben (Anfang und Ende). So merkt ein Nachladen, dass es inzwischen veraltet ist. */
+export let schreibNr = 0;
+const schreiben = (pfad, opt) => { schreibNr++; return anfrage(pfad, opt).finally(() => { schreibNr++; }); };
 export const anlegen = (tabelle, zeile) =>
-  anfrage(`/rest/v1/${tabelle}`, { methode: 'POST', daten: zeile, kopf: { prefer: 'return=representation' } }).then((z) => z?.[0] ?? z);
+  schreiben(`/rest/v1/${tabelle}`, { methode: 'POST', daten: zeile, kopf: { prefer: 'return=representation' } }).then((z) => z?.[0] ?? z);
 export const aendern = (tabelle, filter, werte) =>
-  anfrage(`/rest/v1/${tabelle}?${filter}`, { methode: 'PATCH', daten: werte, kopf: { prefer: 'return=representation' } }).then((z) => z?.[0] ?? z);
-export const loeschen = (tabelle, filter) => anfrage(`/rest/v1/${tabelle}?${filter}`, { methode: 'DELETE' });
+  schreiben(`/rest/v1/${tabelle}?${filter}`, { methode: 'PATCH', daten: werte, kopf: { prefer: 'return=representation' } }).then((z) => z?.[0] ?? z);
+export const loeschen = (tabelle, filter) => schreiben(`/rest/v1/${tabelle}?${filter}`, { methode: 'DELETE' });
 export const rpc = (name, werte, { gast = false } = {}) => anfrage(`/rest/v1/rpc/${name}`, { methode: 'POST', daten: werte, gast });
 
 /* ---------- Anmelden per Link aus der Mail (kein Kennwort, kein Registrieren) ---------- */

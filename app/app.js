@@ -1,57 +1,14 @@
-/* Freundebuch, Etappe 1: die Wunschliste. Ein ES-Modul ohne Build.
+/* Freundebuch: Wunschliste, Anmelden, Seitenwechsel. ES-Module ohne Build; das Personenbuch (buch.js) lädt erst,
+ * wenn ich angemeldet bin.
  * Gäste kommen über #l/<Schlüssel> ohne Konto; ich melde mich per Link aus der Mail an.
  * Was reserviert ist, erfährt nur der Gast selbst (über sein Gerät); meine Ansicht bekommt nur die Zahl. */
 import * as api from './api.js';
 import { PRODUKT, SCHMUCK } from './zeichnungen.js';
 import { zip } from './zip.js';
-
-/* ---------- Kleine Hilfen ---------- */
-const $ = (s, el = document) => el.querySelector(s);
-const $$ = (s, el = document) => [...el.querySelectorAll(s)];
-const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const ruhig = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-const warte = (ms) => new Promise((r) => setTimeout(r, ms));
-const heute = () => new Date().toLocaleDateString('sv-SE');
-const datum = (iso) => new Date(String(iso).slice(0, 10) + 'T12:00');
-const datumLang = (iso) => datum(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
-const datumTagMonat = (iso) => datum(iso).toLocaleDateString('de-DE', { day: 'numeric', month: 'long' });
-const euro = (n) => (n == null || n === '' ? '' : `${Number(n).toLocaleString('de-DE', { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 })} €`);
-const undListe = (a) => (a.length < 2 ? a.join('') : `${a.slice(0, -1).join(', ')} und ${a[a.length - 1]}`);
-const zahlWort = (n, eins, viele) => `${n} ${n === 1 ? eins : viele}`;
-const gastLink = (schl) => `${location.origin}${location.pathname}#l/${schl}`;
-
-/* Eigene kleine Zeichen, Strich wie von Hand (aus dem Entwurf Faden). */
-const zeichen = (inhalt) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inhalt}</svg>`;
-const ICON = {
-  raus: zeichen('<path d="M10 5.5H6.2c-.6 0-1 .4-1 1v11.3c0 .6.4 1 1 1h11.3c.6 0 1-.4 1-1V14"/><path d="M13.6 5h5.4v5.4M19 5l-7.6 7.6"/>'),
-  link: zeichen('<path d="M10.2 13.8a3.6 3.6 0 0 0 5.2.2l3-3a3.7 3.7 0 0 0-5.2-5.2l-1.2 1.1"/><path d="M13.8 10.2a3.6 3.6 0 0 0-5.2-.2l-3 3a3.7 3.7 0 0 0 5.2 5.2l1.1-1.1"/>'),
-  auge: zeichen('<path d="M2.8 12.2C5 8 8.2 6.1 12 6.1s7 1.9 9.2 6.1C19 16.2 15.8 18 12 18s-7-1.8-9.2-5.8z"/><circle cx="12" cy="12.1" r="2.7"/>'),
-  stift: zeichen('<path d="M5 19.2l1-4.1L15.8 5.3a2 2 0 0 1 2.9 0l.1.1a2 2 0 0 1 0 2.8L9 18l-4 1.2z"/><path d="M14 7.2l2.8 2.8"/>'),
-  zusammen: zeichen('<path d="M9.2 7.4c2.6 0 4.6 2 4.6 4.6s-2 4.6-4.6 4.6-4.6-2-4.6-4.6 2-4.6 4.6-4.6z"/><path d="M14.8 7.4c2.6 0 4.6 2 4.6 4.6s-2 4.6-4.6 4.6"/>'),
-  weiter: zeichen('<path d="M9.4 5.8 15.6 12l-6.2 6.2"/>'),
-  plus: zeichen('<path d="M12.1 5.2c-.2 4.6-.1 9.1.1 13.6"/><path d="M5.3 12.2c4.5-.3 9-.2 13.5.1"/>'),
-};
-const FADEN_LADEN = '<svg viewBox="0 0 54 20" aria-hidden="true"><path pathLength="100" d="M2 12C10 2 16 18 26 10s16 6 26-4"/></svg>';
-const laden = (text = 'Einen Moment …') => `<p class="laden" role="status">${FADEN_LADEN}<span>${esc(text)}</span></p>`;
-
-/* ---------- Zustand ---------- */
-const zustand = {
-  konto: null, listen: [], wuensche: [], lw: [], stand: {}, geladen: false,
-  gast: null, gastSchluessel: null,
-  blatt: null, ersteAnzeige: true, anmeldeFehler: null,
-};
-const VORNAME = 'freundebuch.vorname';
-
-/* ---------- Ruhige Bestätigung ---------- */
-let hinweisZeit = 0;
-function hinweis(text) {
-  const h = $('.hinweis');
-  h.textContent = text;
-  h.classList.add('da');
-  clearTimeout(hinweisZeit);
-  hinweisZeit = setTimeout(() => h.classList.remove('da'), 3200);
-}
-const fehlerZeigen = (e) => hinweis(e?.code === 'netz' ? e.message : 'Das hat nicht geklappt. Bitte noch einmal.');
+import {
+  $, $$, esc, ruhig, warte, heute, datumLang, datumTagMonat, euro, undListe, zahlWort, gastLink,
+  ICON, laden, zustand, VORNAME, hinweis, fehlerZeigen, blattOeffnen, blattInnen, blattZu, blattZuNach, app,
+} from './basis.js';
 
 /* ---------- Route ---------- */
 function route() {
@@ -59,8 +16,9 @@ function route() {
   const [teil, id] = h.split('/');
   if (teil === 'l' && id) return { teil: 'gast', id };
   if (teil === 'liste' && id) return { teil: 'liste', id };
-  if (teil === 'anmelden') return { teil: 'anmelden' };
-  return { teil: 'listen' };
+  if (teil === 'person' && id) return { teil: 'person', id };
+  if (['menschen', 'suche', 'ich', 'einstellungen'].includes(teil)) return { teil };
+  return { teil: 'start' };
 }
 
 /* =====================================================================
@@ -179,6 +137,7 @@ function gastWuensche() {
     ${frei.length ? `<ol class="wunsch-liste">${frei.map((w) => gastKarte(w, offenDabei === w.id)).join('')}</ol>` : `<p class="leer-zeile">${g.wuensche.length ? 'Alles andere ist schon vergeben.' : 'Alles ist schon vergeben. Danke!'}</p>`}</section>`;
 }
 
+const vorschauZurueck = () => { const l = zustand.listen.find((x) => x.link_schluessel === zustand.gastSchluessel); return l ? `#liste/${l.id}` : '#ich'; };
 function seiteGast() {
   const g = zustand.gast;
   if (!g) {
@@ -194,7 +153,7 @@ function seiteGast() {
       <div class="leer-karte"><span>${SCHMUCK.schleife}</span><h2>Diese Liste ist abgeschlossen</h2><p>Hier gibt es nichts mehr auszusuchen. Danke fürs Vorbeischauen!</p></div></article>`;
   }
   return `<article class="seite seite-gast">
-    ${g.vorschau ? `<p class="vorschau-band"><strong>Vorschau</strong><span>So sehen es deine Leute. Was vergeben ist, siehst du hier nicht.</span><a class="knopf-text" href="#">Zurück</a></p>` : ''}
+    ${g.vorschau ? `<p class="vorschau-band"><strong>Vorschau</strong><span>So sehen es deine Leute. Was vergeben ist, siehst du hier nicht.</span><a class="knopf-text" href="${vorschauZurueck()}">Zurück</a></p>` : ''}
     ${kopf}
       ${g.vorschau ? '' : '<p class="gast-erklaerung">Such dir etwas aus. Danach ist es für alle anderen weg, so schenkt niemand doppelt. Dieses Gerät merkt sich, was du ausgesucht hast.</p>'}
     </header>
@@ -385,21 +344,54 @@ function zeigenAnmelden(email = '') {
 /* =====================================================================
  * Ich: Daten
  * ===================================================================== */
-async function ichLaden() {
-  const [konto, listen, wuensche, lw] = await Promise.all([
+async function ichLaden(versuch = 0, hintergrund = false) {
+  const nr = api.schreibNr;
+  const [konto, listen, wuensche, lw, buchDaten] = await Promise.all([
     api.lesen('konto', 'select=id,anzeigename'),
     api.lesen('liste', 'select=*&order=angelegt.asc'),
     api.lesen('wunsch', 'select=*&order=angelegt.asc'),
     api.lesen('liste_wunsch', 'select=*'),
+    buch.holen(),
   ]);
-  zustand.konto = konto[0] || null;
-  zustand.listen = listen;
-  zustand.wuensche = wuensche;
-  zustand.lw = lw;
   const staende = await Promise.all(listen.map((l) => api.rpc('mein_stand', { p_liste: l.id }).catch(() => null)));
-  zustand.stand = Object.fromEntries(listen.map((l, i) => [l.id, staende[i]]));
+  /* Wurde unterwegs etwas geschrieben, ist das Geholte womöglich älter als das im Gerät. */
+  if (nr !== api.schreibNr && versuch < 3) return ichLaden(versuch + 1, hintergrund);
+  /* Ein offenes Blatt arbeitet mit den jetzigen Zeilen; das Neueste kommt danach. */
+  if (hintergrund && (zustand.blatt || zustand.menue || nr !== api.schreibNr)) { zustand.nachholen = true; return; }
+  Object.assign(zustand, { konto: konto[0] || null, listen, wuensche, lw, stand: Object.fromEntries(listen.map((l, i) => [l.id, staende[i]])) });
+  buch.uebernehmen(buchDaten);
   zustand.geladen = true;
+  zustand.frisch = Date.now();
 }
+/* Das Personenbuch lädt nur, wer angemeldet ist. */
+let buch = null;
+const buchLaden = async () => { buch ??= await import('./buch.js'); };
+/* Im Hintergrund nachsehen, was es Neues gibt (anderes Gerät); gezeichnet wird nur, wenn gerade nichts offen ist. */
+let frischt = false;
+async function auffrischen() {
+  if (frischt || !api.angemeldet() || !buch || route().teil === 'gast') return;
+  frischt = true;
+  try {
+    const vorher = JSON.stringify([zustand.konto, zustand.listen, zustand.wuensche, zustand.lw, zustand.stand, zustand.buch]);
+    await buch.ausgangLeeren();
+    await ichLaden(0, true);
+    const tippt = document.activeElement?.matches('input, textarea, select');
+    if (!zustand.blatt && !zustand.menue && !zustand.neuId && !tippt && route().teil !== 'gast'
+      && vorher !== JSON.stringify([zustand.konto, zustand.listen, zustand.wuensche, zustand.lw, zustand.stand, zustand.buch])) zeigen({ still: true });
+  } catch (e) {
+    if (!api.angemeldet()) zeigen();
+  } finally { frischt = false; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - (zustand.frisch || 0) > 30000) auffrischen(); });
+app.nachBlatt = () => { if (zustand.nachholen) { zustand.nachholen = false; setTimeout(auffrischen, 900); } };
+/* Nicht mehr angemeldet (abgelaufen, anderer Tab): nichts Privates zeigen oder behalten. Was noch nicht beim Server ist
+ * (Ausgang, angefangener Satz), bleibt für dieses Konto liegen. */
+function privatesWeg() {
+  try { for (const k of Object.keys(localStorage)) if (/^freundebuch\.(buch|zuletzt)\./.test(k)) localStorage.removeItem(k); } catch { /* kein Speicher */ }
+  Object.assign(zustand, { geladen: false, konto: null, listen: [], wuensche: [], lw: [], stand: {}, suchwort: '' });
+  zustand.buch = { personen: [], steckbrief: [], beziehungen: [], arten: [], eintraege: [], geschenke: [], abo: null };
+}
+if (api.melden) api.melden.abgemeldet = () => { privatesWeg(); if (route().teil !== 'gast') zeigen(); };
 const wuenscheVon = (lid) => zustand.lw.filter((x) => x.liste_id === lid)
   .sort((a, b) => a.reihenfolge - b.reihenfolge)
   .map((x) => zustand.wuensche.find((w) => w.id === x.wunsch_id))
@@ -412,43 +404,25 @@ function listenKarte(l) {
   return `<li><a class="geteilt" href="#liste/${l.id}">
     <span class="geteilt-zeichen" aria-hidden="true">${l.archiviert ? SCHMUCK.schleife : PRODUKT.box}</span>
     <span class="geteilt-text"><span class="geteilt-titel">${esc(l.titel)}</span>
-      <span class="geteilt-zahl">${l.anlass_datum ? `${datumTagMonat(l.anlass_datum)} · ` : ''}${zahlWort(n, 'Wunsch', 'Wünsche')}${v ? ` · <strong style="white-space:nowrap">${vergebenText(v)}</strong>` : ''}</span></span>
+      <span class="geteilt-zahl">${l.anlass_datum ? `${datumTagMonat(l.anlass_datum)} · ` : ''}${zahlWort(n, 'Wunsch', 'Wünsche')}${v ? `<strong>${vergebenText(v)}</strong>` : ''}</span></span>
     ${ICON.weiter}</a></li>`;
 }
 
-function seiteListen() {
-  const offen = zustand.listen.filter((l) => !l.archiviert), zu = zustand.listen.filter((l) => l.archiviert);
-  const name = zustand.konto?.anzeigename || '';
-  return `<article class="seite seite-listen">
-    <header class="liste-kopf">
-      <p class="ueberzeile">${name ? `Hallo ${esc(name)}` : 'Hallo'}</p>
-      <h1 class="liste-titel" tabindex="-1">Meine Wunschlisten</h1>
-      <p class="name-zeile liste-unter"><span>Deine Leute lesen: „<strong>${esc(name || '…')}</strong> wünscht sich“</span><button class="knopf-text" type="button" data-aktion="name">Ändern</button></p>
-    </header>
-    ${zustand.perLink && iphoneSafari() ? `<div class="post app-hinweis"><h2>Du nutzt die App auf dem Home-Bildschirm?</h2><p>Dort bist du noch nicht angemeldet. Hol dir einen Code und gib ihn in der App ein.</p><p class="liste-handlung" style="margin-top:12px"><button class="knopf" type="button" data-aktion="code-holen">Code für die App</button></p></div>` : ''}
-    ${offen.length ? `<ul class="geteilt-liste">${offen.map(listenKarte).join('')}</ul>` : `<div class="leer-karte"><span>${SCHMUCK.schleife}</span><h2>Noch keine Liste</h2><p>Leg eine Liste für einen Anlass an, zum Beispiel Weihnachten. Den Link schickst du dann an deine Leute.</p></div>`}
-    <p class="liste-handlung"><button class="knopf" type="button" data-aktion="liste-neu">${ICON.plus}<span>Neue Liste</span></button></p>
-    ${zu.length ? `<details class="abgeschlossen"><summary>Abgeschlossen (${zu.length})</summary><ul class="geteilt-liste">${zu.map(listenKarte).join('')}</ul></details>` : ''}
-    <footer class="listen-fuss">
-      <button class="knopf-text" type="button" data-aktion="code-holen">Code für die App</button>
-      <button class="knopf-text" type="button" data-aktion="export">Alles als Datei sichern</button>
-      <button class="knopf-text" type="button" data-aktion="abmelden">Abmelden</button>
-    </footer>
-  </article>`;
-}
+/* Nach dem Link aus der Mail öffnet das iPhone Safari; die App auf dem Home-Bildschirm braucht einen Code. */
+const appHinweis = () => (zustand.perLink && iphoneSafari() ? '<div class="post app-hinweis"><h2>Du nutzt die App auf dem Home-Bildschirm?</h2><p>Dort bist du noch nicht angemeldet. Hol dir einen Code und gib ihn in der App ein.</p><p class="liste-handlung" style="margin-top:12px"><button class="knopf" type="button" data-aktion="code-holen">Code für die App</button></p></div>' : '');
 
 /* ---------- Eine Liste ---------- */
 function seiteListe(id) {
   const L = zustand.listen.find((l) => l.id === id);
   if (!L) {
-    return `<article class="seite fehlerseite"><h1 class="seiten-titel" tabindex="-1">Liste nicht gefunden</h1><p><a class="knopf-text" href="#">Zu meinen Listen</a></p></article>`;
+    return `<article class="seite fehlerseite"><h1 class="seiten-titel" tabindex="-1">Liste nicht gefunden</h1><p><a class="knopf-text" href="#ich">Zu meiner Seite</a></p></article>`;
   }
   const ws = wuenscheVon(L.id);
   const andere = zustand.wuensche.filter((w) => !w.entfernt_am && !zustand.lw.some((x) => x.liste_id === L.id && x.wunsch_id === w.id));
   const v = zustand.stand[L.id] || 0;
   return `<article class="seite seite-liste">
     <header class="liste-kopf">
-      <a class="zurueck" href="#">${ICON.weiter}<span>Meine Listen</span></a>
+      <a class="zurueck" href="#ich">${ICON.weiter}<span>Meine Seite</span></a>
       <h1 class="liste-titel" tabindex="-1">${esc(L.titel)}</h1>
       <p class="liste-unter">${L.anlass_datum ? `${datumLang(L.anlass_datum)} · ` : ''}${zahlWort(ws.length, 'Wunsch', 'Wünsche')}${L.archiviert ? ' · abgeschlossen' : ''}</p>
     </header>
@@ -479,31 +453,6 @@ function seiteListe(id) {
 /* =====================================================================
  * Blatt: Liste, Name, Wunsch
  * ===================================================================== */
-const ort = $('#ueber-ort');
-function blattOeffnen(art, daten, innen) {
-  zustand.blatt = { art, ...daten, zurueck: document.activeElement };
-  ort.innerHTML = `<div class="blatt-huelle" data-blatt-huelle>
-    <div class="blatt" role="dialog" aria-modal="true" aria-labelledby="blatt-titel"><span class="blatt-griff" aria-hidden="true"></span><div class="blatt-innen">${innen}</div></div></div>`;
-  document.body.classList.add('blatt-offen');
-  requestAnimationFrame(() => requestAnimationFrame(() => $('.blatt-huelle')?.classList.add('offen')));
-  setTimeout(() => ($('.blatt [autofocus]') || $('.blatt input, .blatt button'))?.focus({ preventScroll: true }), ruhig() ? 0 : 60);
-}
-function blattInnen(innen) {
-  $('.blatt-innen').innerHTML = innen;
-  ($('.blatt [autofocus]') || $('.blatt input, .blatt button'))?.focus({ preventScroll: true });
-}
-function blattZu() {
-  const h = $('.blatt-huelle');
-  if (!h) return;
-  const zurueck = zustand.blatt?.zurueck;
-  zustand.blatt = null;
-  h.classList.remove('offen');
-  h.classList.add('zu');
-  document.body.classList.remove('blatt-offen');
-  setTimeout(() => { if (!zustand.blatt) ort.innerHTML = ''; }, ruhig() ? 0 : 300);
-  if (zurueck?.isConnected) zurueck.focus({ preventScroll: true });
-}
-
 /* ---------- Liste anlegen / bearbeiten ---------- */
 function listeBlatt(L) {
   const jahr = new Date().getFullYear(), monat = new Date().getMonth();
@@ -535,13 +484,12 @@ async function listeSpeichern() {
   try {
     if (L) {
       Object.assign(L, await api.aendern('liste', `id=eq.${L.id}`, { titel, anlass_datum: datumWert }));
-      blattZu(); zeigen(); hinweis('Gespeichert');
+      blattZu(); zeigen({ still: true }); hinweis('Gespeichert');
     } else {
       const neu = await api.anlegen('liste', { titel, anlass_datum: datumWert });
       zustand.listen.push(neu);
       zustand.stand[neu.id] = 0;
-      blattZu();
-      location.hash = `#liste/${neu.id}`;
+      blattZuNach(`#liste/${neu.id}`);
     }
   } catch (e) { fehlerZeigen(e); }
 }
@@ -595,6 +543,7 @@ function wunschFormBlatt(w, neu) {
       <label class="feld"><span class="feld-name">Link zum Shop</span><input id="w-link" type="url" inputmode="url" autocomplete="off" value="${esc(w.shop_url || '')}" placeholder="https://…"></label>
       <label class="schalter"><input id="w-zusammen" type="checkbox" role="switch" ${w.zusammenlegen ? 'checked' : ''}>
         <span class="schalter-text"><strong>Zum Zusammenlegen</strong><span>Mehrere schenken es gemeinsam.</span></span></label>
+      ${neu && zustand.blatt && !zustand.blatt.liste ? listenWahl() : ''}
       <p class="feld-fehler" id="w-fehler" role="alert" hidden></p>
       <div class="blatt-fuss">
         ${neu ? '' : '<span class="links"><button class="knopf-text warnung" type="button" data-aktion="wunsch-entfernen">Entfernen</button></span>'}
@@ -604,6 +553,12 @@ function wunschFormBlatt(w, neu) {
     </form>`;
 }
 
+/* Von meiner Seite aus: auf welche Listen kommt der Wunsch? Gibt es nur eine, ist sie vorgewählt. */
+function listenWahl() {
+  const offen = zustand.listen.filter((l) => !l.archiviert);
+  if (!offen.length) return '';
+  return `<fieldset class="feld-gruppe"><legend class="feld-name">Auf welche Liste</legend><div class="chips">${offen.map((l) => `<button class="chip" type="button" data-aktion="w-liste" data-liste-id="${l.id}" aria-pressed="${offen.length === 1}">${esc(l.titel)}</button>`).join('')}</div></fieldset>`;
+}
 const linkAus = (roh) => {
   const t = String(roh || '').trim();
   return t.match(/https?:\/\/\S+/)?.[0] || (/^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t) ? `https://${t}` : '');
@@ -626,13 +581,13 @@ async function wunschNeu(L) {
     try { url = linkAus(await navigator.clipboard.readText()); } catch { /* nicht erlaubt oder weggetippt */ }
     const schonDa = url && zustand.wuensche.some((w) => !w.entfernt_am && w.shop_url && artikel(w.shop_url) === artikel(url));
     if (url && !schonDa) {
-      blattOeffnen('wunsch', { liste: L.id }, LADEN_BLATT);
+      blattOeffnen('wunsch', { liste: L?.id }, LADEN_BLATT);
       linkPruefen(url);
       return;
     }
     if (schonDa) hinweis('Den kopierten Link hast du schon als Wunsch.');
   }
-  blattOeffnen('wunsch', { liste: L.id }, wunschLinkBlatt());
+  blattOeffnen('wunsch', { liste: L?.id }, wunschLinkBlatt());
 }
 
 async function linkPruefen(roh) {
@@ -675,8 +630,10 @@ async function wunschSpeichern() {
   if (link && !/^https?:\/\//i.test(link)) link = `https://${link}`;
   const fehler = $('#w-fehler');
   if (!titel) { $('#w-titel').setAttribute('aria-invalid', 'true'); fehler.hidden = false; fehler.textContent = 'Bitte einen Titel eintragen, damit man weiß, was es ist.'; $('#w-titel').focus(); return; }
+  if (link && (/\s/.test(link) || !wirt(link).includes('.'))) { fehler.hidden = false; fehler.textContent = 'Das sieht nicht wie ein Link aus.'; $('#w-link').focus(); return; }
   if (Number.isNaN(preis)) { fehler.hidden = false; fehler.textContent = 'Den Preis bitte als Zahl, z. B. 39,90.'; $('#w-preis').focus(); return; }
   const zusammen = $('#w-zusammen').checked;
+  const listen = b.liste ? [b.liste] : $$('[data-aktion="w-liste"][aria-pressed="true"]').map((k) => k.dataset.listeId);
   const werte = {
     titel, beschreibung: $('#w-besch').value.trim(), preis_ca: preis, haendler: haendlerFuer(link, w),
     groesse: $('#w-groesse').value.trim().slice(0, 20), menge: zusammen ? 1 : Math.min(9, Math.max(1, +$('#w-menge').textContent || 1)),
@@ -688,14 +645,16 @@ async function wunschSpeichern() {
   try {
     if (neu) {
       const angelegt = await api.anlegen('wunsch', werte);
-      const reihe = Math.max(0, ...zustand.lw.filter((x) => x.liste_id === b.liste).map((x) => x.reihenfolge)) + 1;
-      zustand.lw.push(await api.anlegen('liste_wunsch', { liste_id: b.liste, wunsch_id: angelegt.id, reihenfolge: reihe }));
       zustand.wuensche.push(angelegt);
-      blattZu(); zeigen(); hinweis(`${titel} · auf der Liste`);
+      for (const lid of listen) {
+        const reihe = Math.max(0, ...zustand.lw.filter((x) => x.liste_id === lid).map((x) => x.reihenfolge)) + 1;
+        zustand.lw.push(await api.anlegen('liste_wunsch', { liste_id: lid, wunsch_id: angelegt.id, reihenfolge: reihe }));
+      }
+      blattZu(); zeigen({ still: true }); hinweis(listen.length ? `${titel} · auf der Liste` : `${titel} · notiert`);
       $(`[data-wunsch="${angelegt.id}"]`)?.scrollIntoView({ block: 'center', behavior: ruhig() ? 'auto' : 'smooth' });
     } else {
       Object.assign(w, await api.aendern('wunsch', `id=eq.${w.id}`, werte));
-      blattZu(); zeigen(); hinweis('Gespeichert');
+      blattZu(); zeigen({ still: true }); hinweis('Gespeichert');
     }
   } catch (e) { knopf.disabled = false; fehlerZeigen(e); }
 }
@@ -736,14 +695,17 @@ async function teilen(L) {
 async function exportieren() {
   hinweis('Datei wird gepackt …');
   try {
+    await buch.ausgangLeeren();
     await ichLaden();
     const daten = {
       erstellt: new Date().toISOString(),
       hinweis: 'Freundebuch-Export. Reservierungen sind nicht enthalten: Was dir jemand schenkt, bleibt eine Überraschung.',
       konto: zustand.konto, listen: zustand.listen, wuensche: zustand.wuensche, liste_wunsch: zustand.lw,
+      personen: zustand.buch.personen, steckbrief: zustand.buch.steckbrief, beziehungen: zustand.buch.beziehungen,
+      eigene_arten: zustand.buch.arten, eintraege: zustand.buch.eintraege, geschenke: zustand.buch.geschenke,
     };
     const dateien = [{ name: 'freundebuch.json', daten: JSON.stringify(daten, null, 2) }];
-    for (const w of zustand.wuensche.filter((x) => x.bild_pfad)) {
+    for (const w of [...zustand.wuensche, ...zustand.buch.geschenke].filter((x) => x.bild_pfad)) {
       try {
         const r = await fetch(api.bildUrl(w.bild_pfad));
         if (r.ok) dateien.push({ name: `bilder/${w.bild_pfad}`, daten: new Uint8Array(await r.arrayBuffer()) });
@@ -765,11 +727,17 @@ async function exportieren() {
  * ===================================================================== */
 const main = $('#inhalt');
 let anzeigeNr = 0;
-async function zeigen() {
+history.scrollRestoration = 'manual';
+const stellen = new Map();
+let seiteJetzt = null, vorwaerts = false;
+addEventListener('scroll', () => { if (seiteJetzt !== null && seiteJetzt === location.hash) stellen.set(seiteJetzt, scrollY); }, { passive: true });
+document.addEventListener('click', (ev) => { if (ev.target.closest('a[href^="#"]')) vorwaerts = true; }, true);
+async function zeigen({ still = false } = {}) {
   const nr = ++anzeigeNr;
   const r = route();
   document.body.dataset.seite = r.teil;
-  if (zustand.blatt) blattZu();
+  if (zustand.blatt) blattZu({ geschichte: false });
+  buch?.menueZu();
   let html;
   try {
     if (r.teil === 'gast') {
@@ -784,27 +752,59 @@ async function zeigen() {
       html = seiteAnmelden();
       document.title = 'Anmelden · Freundebuch';
     } else {
-      if (!zustand.geladen) {
-        main.innerHTML = `<div class="seite">${laden()}</div>`;
-        await ichLaden();
+      if (!buch || !zustand.geladen) {
+        if (!main.firstElementChild) main.innerHTML = `<div class="seite">${laden()}</div>`;
+        await buchLaden();
+        if (!zustand.geladen) {
+          /* Erst das, was im Gerät liegt, dann im Hintergrund das Neueste. */
+          if (buch.ausLager()) { zustand.geladen = true; setTimeout(auffrischen, 0); } else await ichLaden();
+        }
       }
-      if (r.teil === 'liste') {
-        html = seiteListe(r.id);
-        document.title = `${zustand.listen.find((l) => l.id === r.id)?.titel || 'Liste'} · Freundebuch`;
-      } else {
-        html = seiteListen();
-        document.title = 'Meine Wunschlisten · Freundebuch';
-      }
+      html = seiteAngemeldet(r);
     }
   } catch (e) {
     if (!api.angemeldet() && r.teil !== 'gast') { zustand.geladen = false; html = seiteAnmelden(); }
     else html = `<article class="seite fehlerseite"><h1 class="seiten-titel" tabindex="-1">Gerade nicht erreichbar</h1><p>${esc(e.code === 'netz' ? e.message : 'Bitte gleich noch einmal versuchen.')}</p><p><button class="knopf-rand" type="button" data-aktion="neu-laden">Noch einmal</button></p></article>`;
   }
   if (nr !== anzeigeNr) return;
+  const y = scrollY, fokus = still && main.contains(document.activeElement) ? fokusMerken() : null;
+  const zurueckZu = !vorwaerts && seiteJetzt !== location.hash ? stellen.get(location.hash) || 0 : 0;
+  vorwaerts = false;
+  seiteJetzt = null;
+  const mitLeiste = r.teil !== 'gast' && api.angemeldet() && Boolean(buch);
+  document.body.classList.toggle('mit-leiste', mitLeiste);
   main.innerHTML = html;
-  window.scrollTo(0, 0);
-  if (!zustand.ersteAnzeige) $('[tabindex="-1"]', main)?.focus({ preventScroll: true });
+  if (mitLeiste) { buch.leiste(r); if (zustand.geladen) buch.merken(); }
+  window.scrollTo(0, still ? y : zurueckZu);
+  seiteJetzt = location.hash;
+  const springt = mitLeiste && zustand.springeZu;
+  if (mitLeiste) buch.nachRender();
+  if (zurueckZu && !springt) window.scrollTo(0, zurueckZu);
+  if (still) { if (fokus) $(fokus)?.focus({ preventScroll: true }); }
+  else if (r.teil === 'suche' && mitLeiste) $('#suchfeld')?.focus({ preventScroll: true });
+  else if (!zustand.ersteAnzeige && !springt) $('[tabindex="-1"]', main)?.focus({ preventScroll: true });
   zustand.ersteAnzeige = false;
+}
+function seiteAngemeldet(r) {
+  const p = r.teil === 'person' ? zustand.buch.personen.find((x) => x.id === r.id) : null;
+  const titel = { start: 'Start', menschen: 'Menschen', suche: 'Suche', einstellungen: 'Einstellungen', ich: 'Meine Seite', person: p?.name || 'Mensch', liste: zustand.listen.find((l) => l.id === r.id)?.titel || 'Liste' }[r.teil];
+  document.title = `${titel} · Freundebuch`;
+  switch (r.teil) {
+    case 'liste': return seiteListe(r.id);
+    case 'menschen': return buch.seiteMenschen();
+    case 'suche': return buch.seiteSuche();
+    case 'einstellungen': return buch.seiteEinstellungen();
+    case 'ich': return buch.seitePerson('ich');
+    case 'person': return buch.seitePerson(r.id);
+    default: return buch.seiteStart();
+  }
+}
+/* Beim stillen Neuzeichnen steht der Fokus danach wieder auf demselben Knopf. */
+function fokusMerken() {
+  const el = document.activeElement;
+  if (el.id) return `#${CSS.escape(el.id)}`;
+  if (el.dataset.aktion) return `[data-aktion="${el.dataset.aktion}"]${el.dataset.wunschId ? `[data-wunsch-id="${el.dataset.wunschId}"]` : ''}`;
+  return el.getAttribute('href') ? `a[href="${CSS.escape(el.getAttribute('href'))}"]` : null;
 }
 
 /* ---------- Ereignisse ---------- */
@@ -818,7 +818,7 @@ document.addEventListener('click', async (ev) => {
     case 'schenke': case 'dabei': case 'dabei-fragen': case 'dabei-abbrechen': case 'zuruecknehmen': case 'voll': case 'doch-nicht':
       gastHandlung(a, el.closest('[data-wunsch]')); break;
     case 'blatt-zu': blattZu(); break;
-    case 'neu-laden': zustand.gast = null; zustand.geladen = false; zeigen(); break;
+    case 'neu-laden': main.innerHTML = ''; zustand.gast = null; zustand.geladen = false; zeigen(); break;
     case 'anmelden-zurueck': zeigenAnmelden(anmeldeAdresse); break;
     case 'code-eingeben': {
       const feld = $('#email'), email = feld?.value.trim() || '';
@@ -834,7 +834,18 @@ document.addEventListener('click', async (ev) => {
       break;
     }
     case 'code-holen': codeZeigen(); break;
-    case 'abmelden': await api.abmelden(); Object.assign(zustand, { geladen: false, konto: null, listen: [], wuensche: [], lw: [] }); location.hash = ''; zeigen(); break;
+    case 'abmelden': {
+      await buch.ausgangLeeren();
+      const n = buch.offen();
+      if (n && el.dataset.sicher !== 'ja') { el.dataset.sicher = 'ja'; el.textContent = `Trotzdem abmelden? ${n === 1 ? '1 Eintrag ist' : `${n} Einträge sind`} noch nicht gesichert.`; return; }
+      await api.abmelden();
+      buch.vergessen();
+      privatesWeg();
+      Object.assign(zustand, { gast: null, gastSchluessel: null });
+      location.hash = '';
+      zeigen();
+      break;
+    }
     case 'export': exportieren(); break;
     case 'name': blattOeffnen('name', {}, nameBlatt()); break;
     case 'liste-neu': blattOeffnen('liste', { liste: null }, listeBlatt(null)); break;
@@ -842,21 +853,22 @@ document.addEventListener('click', async (ev) => {
     case 'liste-bearbeiten': blattOeffnen('liste', { liste: L }, listeBlatt(L)); break;
     case 'liste-abschliessen': case 'liste-oeffnen': {
       const zuMachen = a === 'liste-abschliessen';
-      if (zuMachen && el.dataset.sicher !== 'ja') { el.dataset.sicher = 'ja'; el.textContent = 'Wirklich abschließen?'; return; }
+      if (zuMachen && !(Date.now() - el.dataset.sicher > 600)) { el.dataset.sicher ||= Date.now(); el.textContent = 'Wirklich abschließen?'; return; }
       try {
         Object.assign(zustand.blatt.liste, await api.aendern('liste', `id=eq.${zustand.blatt.liste.id}`, { archiviert: zuMachen }));
-        blattZu(); zeigen(); hinweis(zuMachen ? 'Abgeschlossen. Der Link zeigt jetzt nur noch „abgeschlossen“.' : 'Wieder offen');
+        blattZu(); zeigen({ still: true }); hinweis(zuMachen ? 'Abgeschlossen. Der Link zeigt jetzt nur noch „abgeschlossen“.' : 'Wieder offen');
       } catch (e) { fehlerZeigen(e); }
       break;
     }
     case 'liste-loeschen': {
-      if (el.dataset.sicher !== 'ja') { el.dataset.sicher = 'ja'; el.textContent = 'Wirklich löschen? Der Link geht dann nicht mehr.'; return; }
+      if (!(Date.now() - el.dataset.sicher > 600)) { el.dataset.sicher ||= Date.now(); el.textContent = 'Wirklich löschen? Der Link geht dann nicht mehr.'; return; }
       try {
         await api.loeschen('liste', `id=eq.${zustand.blatt.liste.id}`);
-        zustand.geladen = false; blattZu(); location.hash = ''; hinweis('Liste gelöscht');
+        const weg = zustand.blatt.liste.id; zustand.listen = zustand.listen.filter((l) => l.id !== weg); zustand.lw = zustand.lw.filter((x) => x.liste_id !== weg); blattZuNach('#ich'); hinweis('Liste gelöscht');
       } catch (e) { e.message?.includes('liste_vergeben') ? hinweis('Auf dieser Liste ist schon etwas vergeben. Schließ sie stattdessen ab.') : fehlerZeigen(e); }
       break;
     }
+    case 'w-liste': el.setAttribute('aria-pressed', String(el.getAttribute('aria-pressed') !== 'true')); break;
     case 'teilen': if (L) teilen(L); break;
     case 'wunsch-neu': wunschNeu(L); break;
     case 'ohne-link': zustand.blatt.wunsch = neuerWunsch(); blattInnen(wunschFormBlatt(zustand.blatt.wunsch, true)); break;
@@ -870,10 +882,10 @@ document.addEventListener('click', async (ev) => {
     case 'wunsch-entfernen': {
       const w = zustand.blatt.wunsch;
       const mehr = zustand.lw.filter((x) => x.wunsch_id === w.id).length > 1;
-      if (el.dataset.sicher !== 'ja') { el.dataset.sicher = 'ja'; el.textContent = mehr ? 'Von allen Listen entfernen?' : 'Wirklich entfernen?'; return; }
+      if (!(Date.now() - el.dataset.sicher > 600)) { el.dataset.sicher ||= Date.now(); el.textContent = mehr ? 'Von allen Listen entfernen?' : 'Wirklich entfernen?'; return; }
       try {
         Object.assign(w, await api.aendern('wunsch', `id=eq.${w.id}`, { entfernt_am: new Date().toISOString() }));
-        blattZu(); zeigen(); hinweis(`${w.titel} · entfernt`);
+        blattZu(); zeigen({ still: true }); hinweis(`${w.titel} · entfernt`);
       } catch (e) { fehlerZeigen(e); }
       break;
     }
@@ -881,11 +893,11 @@ document.addEventListener('click', async (ev) => {
       const reihe = Math.max(0, ...zustand.lw.filter((x) => x.liste_id === L.id).map((x) => x.reihenfolge)) + 1;
       try {
         zustand.lw.push(await api.anlegen('liste_wunsch', { liste_id: L.id, wunsch_id: el.dataset.wunschId, reihenfolge: reihe }));
-        zeigen(); hinweis('Auf der Liste');
+        zeigen({ still: true }); hinweis('Auf der Liste');
       } catch (e) { fehlerZeigen(e); }
       break;
     }
-    default: break;
+    default: buch?.klick(a, el); break;
   }
 });
 
@@ -903,11 +915,11 @@ document.addEventListener('submit', async (ev) => {
       const name = $('#anzeigename').value.trim().slice(0, 40);
       try {
         zustand.konto = await api.aendern('konto', `id=eq.${zustand.konto.id}`, { anzeigename: name });
-        blattZu(); zeigen(); hinweis('Gespeichert');
+        blattZu(); zeigen({ still: true }); hinweis('Gespeichert');
       } catch (e) { fehlerZeigen(e); }
       break;
     }
-    default: break;
+    default: buch?.senden(f.dataset.form, f); break;
   }
 });
 
@@ -940,17 +952,20 @@ document.addEventListener('keydown', (ev) => {
     gastHandlung('dabei', ev.target.closest('[data-wunsch]'));
     return;
   }
+  if (route().teil !== 'gast' && api.angemeldet() && buch?.taste(ev)) return;
   if (!zustand.blatt) return;
   if (ev.key === 'Escape') { ev.preventDefault(); blattZu(); return; }
   if (ev.key === 'Tab') {
-    const fokusbar = $$('.blatt button:not([disabled]), .blatt input, .blatt textarea, .blatt a[href]');
+    const fokusbar = $$('.blatt button:not([disabled]), .blatt input, .blatt textarea, .blatt select, .blatt a[href]').filter((x) => x.offsetParent !== null);
     const [erstes, letztes] = [fokusbar[0], fokusbar[fokusbar.length - 1]];
     if (ev.shiftKey && document.activeElement === erstes) { ev.preventDefault(); letztes.focus(); }
     else if (!ev.shiftKey && document.activeElement === letztes) { ev.preventDefault(); erstes.focus(); }
   }
 });
 
-addEventListener('hashchange', zeigen);
+addEventListener('hashchange', () => zeigen());
+
+Object.assign(app, { zeigen, route, pille, bild, listenKarte, linkAus, preisLesen, haendlerFuer, appHinweis });
 
 /* Start: Kommt jemand über den Link aus der Mail, steht die Sitzung in der Adresse. */
 const angekommen = api.sitzungAusAdresse();

@@ -247,8 +247,8 @@ test('Anmelden: unbekannte Adresse bekommt „nur auf Einladung“, mit dem Code
   assert.match(await page.textContent('.feld-fehler'), /passt nicht/);
   await page.fill('#code', '123 456');
   await page.press('#code', 'Enter');
-  await page.waitForSelector('.seite-listen');
-  assert.match(await page.textContent('h1'), /Meine Wunschlisten/);
+  await page.waitForSelector('.seite-start');
+  assert.match(await page.textContent('.blick-titel'), /Mia wird \d+/);
   await ctx.close();
 });
 
@@ -270,8 +270,8 @@ test('Preise: Tausenderpunkt und Komma werden richtig gelesen, leerer Titel beko
 
 test('Home-Bildschirm-App: Code auf dem angemeldeten Gerät holen und im anderen eingeben', async () => {
   await zuruecksetzen();
-  const safari = await geraet({ angemeldet: true, ziel: `${BASIS}/#` });
-  await safari.page.waitForSelector('.seite-listen');
+  const safari = await geraet({ angemeldet: true, ziel: `${BASIS}/#einstellungen` });
+  await safari.page.waitForSelector('.seite-einstellungen');
   await safari.page.click('.listen-fuss [data-aktion="code-holen"]');
   await safari.page.waitForSelector('.code-gross');
   const code = (await safari.page.textContent('.code-gross')).trim();
@@ -285,7 +285,7 @@ test('Home-Bildschirm-App: Code auf dem angemeldeten Gerät holen und im anderen
   await app.page.waitForSelector('#code');
   await app.page.fill('#code', code);
   await app.page.press('#code', 'Enter');
-  await app.page.waitForSelector('.seite-listen');
+  await app.page.waitForSelector('.seite-start');
   assert.deepEqual([...safari.fehler, ...app.fehler], []);
   await safari.ctx.close(); await app.ctx.close();
 });

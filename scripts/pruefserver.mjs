@@ -8,6 +8,7 @@ import { createServer } from 'node:http';
 import { readFile, readdir } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { kalender } from '../supabase/functions/kalender/ical.js';
 import { PGlite } from '@electric-sql/pglite';
 
 const wurzel = fileURLToPath(new URL('..', import.meta.url));
@@ -60,6 +61,38 @@ export async function aufsetzen() {
     update public.wunsch set menge = 2, groesse = '43' where id = 'bbbbbbbb-0000-4000-8000-000000000005';
     update public.wunsch set groesse = 'M' where id = 'bbbbbbbb-0000-4000-8000-000000000002';
   `);
+  await buchFuellen();
+}
+
+/* Personenbuch: erfundene Menschen aus den Entwürfen; Geburtstage relativ zu heute, damit „in 5 Tagen“ immer stimmt. */
+const P = (n) => `cccccccc-0000-4000-8000-00000000000${n}`;
+async function buchFuellen() {
+  const { PERSONEN, EINTRAEGE, GESCHENKE, ICH: ICHDATEN } = await import('../entwuerfe/gemeinsam/daten.js');
+  const ids = Object.fromEntries(PERSONEN.map((p, i) => [p.id, P(i + 1)]));
+  const tage = [5, 48, 7, 220, 113, 14], frage = (sql, w) => db.query(sql, w);
+  ids.ich = (await frage(`select id from public.person where konto_id = $1 and ist_ich`, [ICH])).rows[0].id;
+  for (const [i, p] of PERSONEN.entries()) {
+    const d = new Date(Date.now() + tage[i] * 864e5);
+    await frage(`insert into public.person (id, konto_id, name, rufname, geburtstag_tag, geburtstag_monat, geburtsjahr, kennen_woher, schenke_geburtstag, schenke_weihnachten, farbe, angelegt)
+      values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, now() + $12 * interval '1 second')`,
+      [ids[p.id], ICH, p.name, p.rufname === p.name.split(' ')[0] ? '' : p.rufname, d.getDate(), d.getMonth() + 1, +p.geburtstag.slice(0, 4), p.kennen, true, p.beschenken.includes('weihnachten'), p.farbe, i]);
+  }
+  await frage(`update public.person set geburtstag_tag = 7, geburtstag_monat = 5, geburtsjahr = 1996 where id = $1`, [ids.ich]);
+  for (const p of [...PERSONEN, ICHDATEN]) {
+    for (const [i, s] of p.steckbrief.entries()) await frage(`insert into public.steckbrief (konto_id, person_id, bezeichnung, wert, reihenfolge) values ($1,$2,$3,$4,$5)`, [ICH, ids[p.id], s.bez, s.wert, i]);
+    for (const [i, f] of p.familie.entries()) await frage(`insert into public.beziehung (konto_id, person_id, andere_person_id, name, art, reihenfolge) values ($1,$2,$3,$4,$5,$6)`, [ICH, ids[p.id], ids[f.person] || null, f.name, f.art, i]);
+  }
+  const zitat = (await frage(`insert into public.art (konto_id, name) values ($1, 'Zitat') returning id`, [ICH])).rows[0].id;
+  for (const [i, e] of EINTRAEGE.entries()) {
+    const fest = ['mag', 'magnicht', 'interesse', 'geschichte', 'erlebnis'].includes(e.art);
+    await frage(`insert into public.eintrag (id, konto_id, person_id, art, art_id, text, datum, angelegt) values ($1,$2,$3,$4,$5,$6,$7, now() - interval '1 day' + $8 * interval '1 second')`,
+      [`dddddddd-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, ICH, ids[e.person], fest ? e.art : null, e.art === 'zitat' ? zitat : null, e.text, e.datum, i]);
+  }
+  for (const [i, g] of GESCHENKE.entries()) {
+    const m = g.anlass.match(/^(.*?)\s*(\d{4})?$/);
+    await frage(`insert into public.geschenk (id, konto_id, person_id, titel, haendler, preis_ca, stand, anlass, anlass_jahr, angelegt) values ($1,$2,$3,$4,$5,$6,$7,$8,$9, now() - interval '1 day' + $10 * interval '1 second')`,
+      [`eeeeeeee-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, ICH, ids[g.person], g.titel, g.haendler || '', g.preis || null, g.stand, m[1], m[2] ? +m[2] : null, i]);
+  }
 }
 
 /* ---------- Kleiner PostgREST-Nachbau ---------- */
@@ -173,6 +206,10 @@ async function attrappe(req, res, url) {
     if (p === '/attrappe/functions/v1/vorschau') {
       await new Promise((r) => setTimeout(r, 700));
       return antworten(res, 200, vorschau(koerper.url));
+    }
+    if (p === '/attrappe/functions/v1/kalender') {
+      const r = await db.query('select public.kalender_daten($1) as d', [url.searchParams.get('s') || '']);
+      return r.rows[0].d ? antworten(res, 200, kalender(r.rows[0].d), 'text/calendar; charset=utf-8') : antworten(res, 404, { message: 'nicht gefunden' });
     }
     if (p === '/attrappe/functions/v1/koppeln') {
       return wer(req) ? antworten(res, 200, { code: '123456' }) : antworten(res, 401, { fehler: 'anmelden' });
